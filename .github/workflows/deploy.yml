@@ -22,6 +22,7 @@ on:
       - master
       - feature/migration
       - feature/claude-prompt
+      - feature/remove-meeting-limit
 
 env:
   REGISTRY: ghcr.io

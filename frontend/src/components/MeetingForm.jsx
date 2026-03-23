@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getZones, getAttendees, getAgendas, saveMeeting, getMeetingReport, updateMeeting, checkWeekMeeting } from '../services/api';
+import { getZones, getAttendees, getAgendas, saveMeeting, getMeetingReport, updateMeeting } from '../services/api';
 import { getAccessibleZones, hasAnyRole, getUser, getUserAccessConfig, hasRole } from '../services/auth';
 import { setZonesCache } from '../services/zoneHelper';
 import ZoneSelector from './ZoneSelector';
@@ -1091,19 +1091,7 @@ const MeetingForm = () => {
     setSubmitting(true);
 
     try {
-      // Check if meeting already exists for this zone in this week
       const isEditMode = isEditing && editingMeetingId;
-      const weekCheck = await checkWeekMeeting(
-        selectedZoneName,
-        date,
-        isEditMode ? editingMeetingId : null
-      );
-
-      if (weekCheck.exists) {
-        setSubmitting(false);
-        setError(`ഈ ആഴ്ചയിൽ ഈ മണ്ഡലത്തിന് ഇതിനകം ഒരു മീറ്റിംഗ് ഉണ്ട് (${weekCheck.existingMeeting.date})`);
-        return;
-      }
 
       const meetingData = {
         zoneName: selectedZoneName,

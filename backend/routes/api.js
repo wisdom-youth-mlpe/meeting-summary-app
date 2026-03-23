@@ -223,57 +223,6 @@ router.get('/meetings/:meetingId/report', async (req, res) => {
 });
 
 /**
- * GET /api/meetings/check-week
- * Check if a meeting already exists for a zone in a given week (Wednesday to Tuesday)
- */
-router.get('/meetings/check-week', async (req, res) => {
-  try {
-    if (!isMongoConnected()) {
-      return res.status(503).json({
-        success: false,
-        error: 'Database not available',
-        message: 'MongoDB is not connected',
-      });
-    }
-
-    const { zoneName, date, excludeMeetingId } = req.query;
-
-    if (!zoneName || !date) {
-      return res.status(400).json({
-        success: false,
-        error: 'zoneName and date are required',
-      });
-    }
-
-    const existingMeeting = await mongoService.getMeetingForZoneWeek(
-      zoneName,
-      date,
-      excludeMeetingId || null
-    );
-
-    if (existingMeeting) {
-      return res.json({
-        success: true,
-        exists: true,
-        existingMeeting,
-      });
-    }
-
-    res.json({
-      success: true,
-      exists: false,
-    });
-  } catch (error) {
-    console.error('Error in /api/meetings/check-week:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to check week meetings',
-      message: error.message,
-    });
-  }
-});
-
-/**
  * POST /api/meetings
  * Save meeting summary to MongoDB
  */

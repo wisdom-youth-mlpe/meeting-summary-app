@@ -83,14 +83,6 @@ export const updateMeeting = async (meetingId, meetingData) => {
   return response.data;
 };
 
-export const checkWeekMeeting = async (zoneName, date, excludeMeetingId = null) => {
-  const params = { zoneName, date };
-  if (excludeMeetingId) params.excludeMeetingId = excludeMeetingId;
-  
-  const response = await api.get('/api/meetings/check-week', { params });
-  return response.data;
-};
-
 export const getDashboardStats = async (startDate, endDate, zoneId) => {
   const params = {};
   if (startDate) params.startDate = startDate;
