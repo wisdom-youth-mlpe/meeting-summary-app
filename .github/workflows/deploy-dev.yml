@@ -1,4 +1,4 @@
-# Build and Deploy Workflow
+# Build and Deploy Workflow (Dev)
 #
 # Before using this workflow, replace placeholders:
 #   - <your-username>: Your GitHub username or organization
@@ -12,18 +12,12 @@
 #   - SSH_PORT: SSH port (usually 22)
 #   - GHCR_TOKEN: GitHub Container Registry token
 
-name: Build and Deploy
+name: Build and Deploy (Dev)
 
 on:
   push:
     branches:
-      - release
-      - main
-      - master
-      - feature/migration
-      - feature/claude-prompt
-      - feature/remove-meeting-limit
-      - feature/improvements
+      - development
 
 env:
   REGISTRY: ghcr.io
@@ -55,7 +49,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=dev
             type=sha,prefix={{branch}}-
 
       - name: Build and push Frontend image
@@ -67,7 +61,7 @@ jobs:
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
           build-args: |
-            VITE_API_URL=https://meeting.wisdommlpe.site
+            VITE_API_URL=https://dev.meeting.wisdommlpe.site
 
       # Build and push API image
       - name: Extract metadata for API
@@ -76,7 +70,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=dev
             type=sha,prefix={{branch}}-
 
       - name: Build and push API image
@@ -104,18 +98,18 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            mkdir -p /srv/apps/meeting-summary
-            rm -f /srv/apps/meeting-summary/docker-compose.yml
+            mkdir -p /srv/apps/meeting-summary-dev
+            rm -f /srv/apps/meeting-summary-dev/docker-compose.dev.yml
 
-      - name: Copy docker-compose.yml to server
+      - name: Copy docker-compose.dev.yml to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "docker-compose.yml"
-          target: "/srv/apps/meeting-summary"
+          source: "docker-compose.dev.yml"
+          target: "/srv/apps/meeting-summary-dev"
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
@@ -125,21 +119,21 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd /srv/apps/meeting-summary
+            cd /srv/apps/meeting-summary-dev
 
             # Login to GHCR
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u fahizkp --password-stdin
 
-            # Pull latest images
-            docker pull ghcr.io/wisdom-youth-mlpe/meeting-summary-frontend:latest
-            docker pull ghcr.io/wisdom-youth-mlpe/meeting-summary-backend:latest
+            # Pull dev images
+            docker pull ghcr.io/wisdom-youth-mlpe/meeting-summary-frontend:dev
+            docker pull ghcr.io/wisdom-youth-mlpe/meeting-summary-backend:dev
 
             # Stop and remove old containers if exist
-            docker rm -f meeting-summary-backend meeting-summary-frontend || true
-            docker compose down --remove-orphans || true
+            docker rm -f meeting-summary-backend-dev meeting-summary-frontend-dev || true
+            docker compose -f docker-compose.dev.yml down --remove-orphans || true
 
             # Start the new containers
-            docker compose up -d
+            docker compose -f docker-compose.dev.yml up -d
 
             # Clean up old images
             docker image prune -f

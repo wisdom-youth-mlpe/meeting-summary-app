@@ -1,0 +1,51 @@
+services:
+
+  backend:
+    image: ghcr.io/wisdom-youth-mlpe/meeting-summary-backend:dev
+    container_name: meeting-summary-backend-dev
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    environment:
+      - PORT=3001
+      - CORS_ORIGIN=https://dev.meeting.wisdommlpe.site
+    networks:
+      - meeting-summary-internal-dev
+      - infra
+    ports:
+      - "3002:3001"
+
+  frontend:
+    image: ghcr.io/wisdom-youth-mlpe/meeting-summary-frontend:dev
+    container_name: meeting-summary-frontend-dev
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - web
+      - meeting-summary-internal-dev
+    environment:
+      - VITE_API_URL=https://dev.meeting.wisdommlpe.site
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.meeting-summary-dev.rule=Host(`dev.meeting.wisdommlpe.site`)"
+      - "traefik.http.routers.meeting-summary-dev.entrypoints=websecure"
+      - "traefik.http.routers.meeting-summary-dev.tls=true"
+      - "traefik.http.routers.meeting-summary-dev.tls.certresolver=myresolver"
+      - "traefik.http.services.meeting-summary-dev.loadbalancer.server.port=80"
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.meeting-summary-dev-http.rule=Host(`dev.meeting.wisdommlpe.site`)"
+      - "traefik.http.routers.meeting-summary-dev-http.entrypoints=web"
+      - "traefik.http.routers.meeting-summary-dev-http.middlewares=redirect-to-https"
+
+networks:
+  web:
+    external: true
+  meeting-summary-internal-dev:
+    driver: bridge
+  infra:
+    external: true
+
+volumes:
+  mongo-data-dev:
