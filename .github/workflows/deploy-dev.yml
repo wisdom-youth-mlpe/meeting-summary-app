@@ -99,6 +99,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             mkdir -p /srv/apps/meeting-summary-dev
+            touch /srv/apps/meeting-summary-dev/.env.dev
             rm -f /srv/apps/meeting-summary-dev/docker-compose.dev.yml
 
       - name: Copy docker-compose.dev.yml to server
