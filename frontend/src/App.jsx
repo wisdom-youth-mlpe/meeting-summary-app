@@ -6,12 +6,13 @@ import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { logout, getUser, hasRole, hasAnyRole, isAntiGravityUser } from './services/auth';
 import BottomNavigation from './components/BottomNavigation';
-
-import Dashboard from './components/Dashboard';
-import UserManagement from './components/UserManagement';
 import HomeRedirect from './components/HomeRedirect';
-import QHLSDashboard from './components/QHLSDashboard';
-import CommitteeManagement from './components/CommitteeManagement';
+
+// Lazy loaded components
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const UserManagement = React.lazy(() => import('./components/UserManagement'));
+const QHLSDashboard = React.lazy(() => import('./components/QHLSDashboard'));
+const CommitteeManagement = React.lazy(() => import('./components/CommitteeManagement'));
 
 // Layout component for authenticated pages
 const AuthenticatedLayout = ({ children }) => {
@@ -118,80 +119,86 @@ const AuthenticatedLayout = ({ children }) => {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <HomeRedirect />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/form"
-        element={
-          <ProtectedRoute requiredAnyRole={['admin', 'zone_admin']}>
-            <AuthenticatedLayout>
-              <MeetingForm />
-            </AuthenticatedLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/report"
-        element={
-          <ProtectedRoute>
-            <AuthenticatedLayout>
-              <MeetingReport />
-            </AuthenticatedLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute requiredAnyRole={['admin', 'district_admin']}>
-            <AuthenticatedLayout>
-              <Dashboard onNavigate={(id) => {
-                // Navigation logic
-              }} />
-            </AuthenticatedLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AuthenticatedLayout>
-              <UserManagement />
-            </AuthenticatedLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/qhls"
-        element={
-          <ProtectedRoute requiredAnyRole={['admin', 'district_admin']}>
-            <AuthenticatedLayout>
-              <QHLSDashboard />
-            </AuthenticatedLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/committee"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AuthenticatedLayout>
-              <CommitteeManagement />
-            </AuthenticatedLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <React.Suspense fallback={
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif' }}>
+        <h2>Loading...</h2>
+      </div>
+    }>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <HomeRedirect />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/form"
+          element={
+            <ProtectedRoute requiredAnyRole={['admin', 'zone_admin']}>
+              <AuthenticatedLayout>
+                <MeetingForm />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/report"
+          element={
+            <ProtectedRoute>
+              <AuthenticatedLayout>
+                <MeetingReport />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute requiredAnyRole={['admin', 'district_admin']}>
+              <AuthenticatedLayout>
+                <Dashboard onNavigate={(id) => {
+                  // Navigation logic
+                }} />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AuthenticatedLayout>
+                <UserManagement />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/qhls"
+          element={
+            <ProtectedRoute requiredAnyRole={['admin', 'district_admin']}>
+              <AuthenticatedLayout>
+                <QHLSDashboard />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/committee"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AuthenticatedLayout>
+                <CommitteeManagement />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </React.Suspense>
   );
 }
 
