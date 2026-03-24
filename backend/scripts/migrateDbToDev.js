@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-const sourceUri = process.env.SOURCE_DB_URI || 'mongodb://localhost:27017/meeting_app';
-const targetUri = process.env.TARGET_DB_URI || 'mongodb://localhost:27017/meeting_app_dev';
+const sourceUri = process.env.SOURCE_DB_URI || 'mongodb://meeting_app:meeting_app@mongo:27017/meeting_app';
+const targetUri = process.env.TARGET_DB_URI || 'mongodb://meeting_app_dev:meeting_app_dev@mongo:27017/meeting_app_dev';
 
 async function migrateData() {
   console.log('==============================================');
