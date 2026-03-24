@@ -17,7 +17,7 @@ name: Build and Deploy (Dev)
 on:
   push:
     branches:
-      - development
+      - develop
 
 env:
   REGISTRY: ghcr.io

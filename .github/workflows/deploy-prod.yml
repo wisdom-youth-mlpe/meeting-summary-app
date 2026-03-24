@@ -17,9 +17,7 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - release
-      - main
-      - master
+      - production
 
 env:
   REGISTRY: ghcr.io
