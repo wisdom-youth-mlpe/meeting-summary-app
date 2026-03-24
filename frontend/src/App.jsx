@@ -12,7 +12,7 @@ import HomeRedirect from './components/HomeRedirect';
 const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const UserManagement = React.lazy(() => import('./components/UserManagement'));
 const QHLSDashboard = React.lazy(() => import('./components/QHLSDashboard'));
-const CommitteeManagement = React.lazy(() => import('./components/CommitteeManagement'));
+const MemberManagement = React.lazy(() => import('./components/MemberManagement'));
 
 // Layout component for authenticated pages
 const AuthenticatedLayout = ({ children }) => {
@@ -187,11 +187,11 @@ function App() {
           }
         />
         <Route
-          path="/committee"
+          path="/members"
           element={
-            <ProtectedRoute requiredRole="admin">
+            <ProtectedRoute requiredAnyRole={['admin', 'zone_admin', 'district_admin']}>
               <AuthenticatedLayout>
-                <CommitteeManagement />
+                <MemberManagement />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

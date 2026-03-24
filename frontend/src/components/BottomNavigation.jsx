@@ -102,12 +102,12 @@ const BottomNavigation = () => {
         });
     }
 
-    // Committee tab - admin only
-    if (accessConfig.showAdminTab) {
+    // Members tab
+    if (accessConfig.showMembersTab) {
         tabs.push({
-            id: 'committee',
-            path: '/committee',
-            label: 'കമ്മിറ്റി',
+            id: 'members',
+            path: '/members',
+            label: 'മെമ്പേഴ്സ്',
             icon: Icons.Committee,
         });
     }

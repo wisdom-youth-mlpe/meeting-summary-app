@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getUser, hasRole } from '../services/auth';
 
-const CommitteeManagement = () => {
+const MemberManagement = () => {
     const [committees, setCommittees] = useState([]);
     const [roles, setRoles] = useState([]);
     const [zones, setZones] = useState([]);
@@ -191,7 +191,7 @@ const CommitteeManagement = () => {
     return (
         <div className="committee-management">
             <div className="header-section">
-                <h2>Committee Management</h2>
+                <h2>Members Management</h2>
                 <button
                     className="btn-primary"
                     onClick={() => setShowForm(!showForm)}
@@ -204,7 +204,7 @@ const CommitteeManagement = () => {
 
             {showForm && (
                 <div className="form-card">
-                    <h3>{editingCommittee ? 'Edit Committee Member' : 'Add New Committee Member'}</h3>
+                    <h3>{editingCommittee ? 'Edit Member' : 'Add New Member'}</h3>
                     <form onSubmit={handleSubmit}>
                         <div className="form-grid">
                             <div className="form-group">
@@ -305,7 +305,7 @@ const CommitteeManagement = () => {
             </div>
 
             <div className="table-card">
-                <h3>Committee Members ({committees.length})</h3>
+                <h3>Members ({committees.length})</h3>
                 <div className="table-responsive">
                     <table className="committee-table">
                         <thead>
@@ -595,4 +595,4 @@ const CommitteeManagement = () => {
     );
 };
 
-export default CommitteeManagement;
+export default MemberManagement;

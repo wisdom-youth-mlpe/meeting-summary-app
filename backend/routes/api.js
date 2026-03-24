@@ -814,8 +814,27 @@ router.get('/committees', async (req, res) => {
     const { zoneId } = req.query;
     let query = {};
     
-    if (zoneId && zoneId !== 'All') {
-      query.zoneId = zoneId;
+    const user = req.user;
+    const isAdmin = user.roles && (user.roles.includes('admin') || user.roles.includes('district_admin'));
+    
+    if (!isAdmin && !user.isAntiGravity) {
+      const allowedZones = user.zoneAccess || [];
+      if (zoneId && zoneId !== 'All') {
+        if (!allowedZones.includes(zoneId)) {
+          return res.status(403).json({ success: false, error: 'Access denied to this zone' });
+        }
+        query.zoneId = zoneId;
+      } else {
+        // limit to user's assigned zones
+        if (allowedZones.length === 0) {
+          return res.json({ success: true, committees: [] }); // User has no zones assigned
+        }
+        query.zoneId = { $in: allowedZones };
+      }
+    } else {
+      if (zoneId && zoneId !== 'All') {
+        query.zoneId = zoneId;
+      }
     }
 
     const committees = await Committee.find(query).sort({ zoneId: 1, roleId: 1 });
@@ -900,6 +919,14 @@ router.post('/committees', express.json(), async (req, res) => {
 
     const { name, roleId, zoneId, mobile, whatsapp } = req.body;
 
+    const user = req.user;
+    const isAdmin = user.roles && user.roles.includes('admin');
+    if (!isAdmin && !user.isAntiGravity) {
+      if (!user.zoneAccess || !user.zoneAccess.includes(zoneId)) {
+        return res.status(403).json({ success: false, error: 'Access denied to create members for this zone' });
+      }
+    }
+
     // Validation
     if (!name || !roleId || !zoneId) {
       return res.status(400).json({
@@ -955,6 +982,19 @@ router.put('/committees/:committeeId', express.json(), async (req, res) => {
 
     const { committeeId } = req.params;
     const { name, roleId, zoneId, mobile, whatsapp } = req.body;
+
+    const user = req.user;
+    const isAdmin = user.roles && user.roles.includes('admin');
+    
+    if (!isAdmin && !user.isAntiGravity) {
+       const existingCommittee = await Committee.findOne({ committeeId });
+       if (!existingCommittee) {
+         return res.status(404).json({ success: false, error: 'Member not found' });
+       }
+       if (!user.zoneAccess || !user.zoneAccess.includes(existingCommittee.zoneId) || !user.zoneAccess.includes(zoneId)) {
+         return res.status(403).json({ success: false, error: 'Access denied' });
+       }
+    }
 
     // Validation
     if (!name || !roleId || !zoneId) {
@@ -1014,6 +1054,23 @@ router.delete('/committees/:committeeId', async (req, res) => {
     }
 
     const { committeeId } = req.params;
+    
+    const user = req.user;
+    const isAdmin = user.roles && user.roles.includes('admin');
+    
+    const existingCommittee = await Committee.findOne({ committeeId });
+    if (!existingCommittee) {
+      return res.status(404).json({
+        success: false,
+        error: 'Member not found',
+      });
+    }
+    
+    if (!isAdmin && !user.isAntiGravity) {
+       if (!user.zoneAccess || !user.zoneAccess.includes(existingCommittee.zoneId)) {
+         return res.status(403).json({ success: false, error: 'Access denied' });
+       }
+    }
 
     const committee = await Committee.findOneAndDelete({ committeeId });
 
