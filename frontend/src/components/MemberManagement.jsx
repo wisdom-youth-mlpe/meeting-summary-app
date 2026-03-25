@@ -78,7 +78,16 @@ const MemberManagement = () => {
     const loadZones = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('/api/zones', {
+            let queryParam = '';
+            try {
+                const userObj = JSON.parse(localStorage.getItem('meeting_app_user'));
+                if (userObj && userObj.roles && userObj.roles.includes('district_admin') && !userObj.roles.includes('admin') && userObj.districtAccess) {
+                    queryParam = `?districts=${userObj.districtAccess.join(',')}`;
+                }
+            } catch (e) {
+                console.error('Failed parsing user', e);
+            }
+            const response = await fetch(`/api/zones${queryParam}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
