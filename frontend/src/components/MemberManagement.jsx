@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getUser, hasRole } from '../services/auth';
+import { getUser, hasRole, getToken } from '../services/auth';
 
-const CommitteeManagement = () => {
+const MemberManagement = () => {
     const [committees, setCommittees] = useState([]);
     const [roles, setRoles] = useState([]);
     const [zones, setZones] = useState([]);
@@ -10,6 +10,8 @@ const CommitteeManagement = () => {
     const [showForm, setShowForm] = useState(false);
     const [editingCommittee, setEditingCommittee] = useState(null);
     const [selectedZoneFilter, setSelectedZoneFilter] = useState('All');
+    const [selectedRoleFilter, setSelectedRoleFilter] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Form state
     const [formData, setFormData] = useState({
@@ -21,10 +23,14 @@ const CommitteeManagement = () => {
     });
 
     useEffect(() => {
-        loadData();
+        loadInitialData();
+    }, []);
+
+    useEffect(() => {
+        loadCommittees();
     }, [selectedZoneFilter]);
 
-    const loadData = async () => {
+    const loadInitialData = async () => {
         setLoading(true);
         try {
             await Promise.all([
@@ -42,7 +48,8 @@ const CommitteeManagement = () => {
 
     const loadCommittees = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
+            if (!token) return;
             const queryParam = selectedZoneFilter !== 'All' ? `?zoneId=${selectedZoneFilter}` : '';
             const response = await fetch(`/api/committees${queryParam}`, {
                 headers: {
@@ -51,7 +58,9 @@ const CommitteeManagement = () => {
             });
             const data = await response.json();
             if (data.success) {
-                setCommittees(data.committees);
+                setCommittees(data.committees || []);
+            } else {
+                console.error('Failed to load committees:', data.error || data.message);
             }
         } catch (err) {
             console.error('Failed to load committees:', err);
@@ -60,7 +69,8 @@ const CommitteeManagement = () => {
 
     const loadRoles = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
+            if (!token) return;
             const response = await fetch('/api/committee-roles', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -68,7 +78,7 @@ const CommitteeManagement = () => {
             });
             const data = await response.json();
             if (data.success) {
-                setRoles(data.roles);
+                setRoles(data.roles || []);
             }
         } catch (err) {
             console.error('Failed to load roles:', err);
@@ -77,7 +87,8 @@ const CommitteeManagement = () => {
 
     const loadZones = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
+            if (!token) return;
             const response = await fetch('/api/zones', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -85,7 +96,7 @@ const CommitteeManagement = () => {
             });
             const data = await response.json();
             if (data.success) {
-                setZones(data.zones);
+                setZones(data.zones || []);
             }
         } catch (err) {
             console.error('Failed to load zones:', err);
@@ -104,7 +115,7 @@ const CommitteeManagement = () => {
         e.preventDefault();
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             const url = editingCommittee
                 ? `/api/committees/${editingCommittee.committeeId}`
                 : '/api/committees';
@@ -126,10 +137,10 @@ const CommitteeManagement = () => {
                 resetForm();
                 loadCommittees();
             } else {
-                alert('Error: ' + data.message);
+                alert('Error: ' + (data.message || data.error));
             }
         } catch (err) {
-            alert('Failed to save committee member: ' + err.message);
+            alert('Failed to save member: ' + err.message);
         }
     };
 
@@ -143,15 +154,17 @@ const CommitteeManagement = () => {
             whatsapp: committee.whatsapp || '',
         });
         setShowForm(true);
+        // Scroll to top so user can see the form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleDelete = async (committeeId) => {
-        if (!confirm('Are you sure you want to delete this committee member?')) {
+    const handleDelete = async (committeeId, memberName) => {
+        if (!confirm(`"${memberName}" - ഡിലീറ്റ് ചെയ്യുക?`)) {
             return;
         }
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getToken();
             const response = await fetch(`/api/committees/${committeeId}`, {
                 method: 'DELETE',
                 headers: {
@@ -165,10 +178,10 @@ const CommitteeManagement = () => {
                 alert(data.message);
                 loadCommittees();
             } else {
-                alert('Error: ' + data.message);
+                alert('Error: ' + (data.message || data.error));
             }
         } catch (err) {
-            alert('Failed to delete committee member: ' + err.message);
+            alert('Failed to delete member: ' + err.message);
         }
     };
 
@@ -184,19 +197,35 @@ const CommitteeManagement = () => {
         setShowForm(false);
     };
 
+    // Apply client-side role filter and search
+    const filteredCommittees = committees.filter(c => {
+        const matchesRole = selectedRoleFilter === 'All' || c.roleId === selectedRoleFilter;
+        const matchesSearch = !searchQuery || 
+            (c.name && c.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (c.mobile && c.mobile.includes(searchQuery)) ||
+            (c.zoneName && c.zoneName.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchesRole && matchesSearch;
+    });
+
+    // Get role name helper
+    const getRoleName = (roleId) => {
+        const role = roles.find(r => r.roleId === roleId);
+        return role ? `${role.name} (${role.englishName})` : roleId;
+    };
+
     if (loading) {
-        return <div className="loading-spinner">Loading...</div>;
+        return <div className="loading-spinner">ലോഡ് ചെയ്യുന്നു...</div>;
     }
 
     return (
-        <div className="committee-management">
+        <div className="member-management">
             <div className="header-section">
-                <h2>Committee Management</h2>
+                <h2>മെമ്പേഴ്സ് മാനേജ്മെന്റ്</h2>
                 <button
                     className="btn-primary"
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => { showForm ? resetForm() : setShowForm(true); }}
                 >
-                    {showForm ? 'Cancel' : '+ Add Member'}
+                    {showForm ? '✕ Cancel' : '+ Add Member'}
                 </button>
             </div>
 
@@ -204,7 +233,7 @@ const CommitteeManagement = () => {
 
             {showForm && (
                 <div className="form-card">
-                    <h3>{editingCommittee ? 'Edit Committee Member' : 'Add New Committee Member'}</h3>
+                    <h3>{editingCommittee ? '✏️ Edit Member' : '➕ Add New Member'}</h3>
                     <form onSubmit={handleSubmit}>
                         <div className="form-grid">
                             <div className="form-group">
@@ -288,53 +317,105 @@ const CommitteeManagement = () => {
                 </div>
             )}
 
+            {/* Filters Section */}
             <div className="filter-section">
-                <label>Filter by Zone:</label>
-                <select
-                    value={selectedZoneFilter}
-                    onChange={(e) => setSelectedZoneFilter(e.target.value)}
-                    className="zone-filter"
-                >
-                    <option value="All">All Zones</option>
-                    {zones.map(zone => (
-                        <option key={zone.id} value={zone.id}>
-                            {zone.name}
-                        </option>
-                    ))}
-                </select>
+                <div className="filter-group">
+                    <label>Zone:</label>
+                    <select
+                        value={selectedZoneFilter}
+                        onChange={(e) => setSelectedZoneFilter(e.target.value)}
+                        className="filter-select"
+                    >
+                        <option value="All">All Zones</option>
+                        {zones.map(zone => (
+                            <option key={zone.id} value={zone.id}>
+                                {zone.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="filter-group">
+                    <label>Role:</label>
+                    <select
+                        value={selectedRoleFilter}
+                        onChange={(e) => setSelectedRoleFilter(e.target.value)}
+                        className="filter-select"
+                    >
+                        <option value="All">All Roles</option>
+                        {roles.map(role => (
+                            <option key={role.roleId} value={role.roleId}>
+                                {role.name} ({role.englishName})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="filter-group search-group">
+                    <label>Search:</label>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="filter-select"
+                        placeholder="Search name, mobile, zone..."
+                    />
+                </div>
             </div>
 
+            {/* Summary Badges */}
+            <div className="summary-badges">
+                <span className="badge badge-total">Total: {filteredCommittees.length}</span>
+                {selectedZoneFilter !== 'All' && (
+                    <span className="badge badge-zone">
+                        Zone: {zones.find(z => z.id === selectedZoneFilter)?.name || selectedZoneFilter}
+                    </span>
+                )}
+                {selectedRoleFilter !== 'All' && (
+                    <span className="badge badge-role">
+                        Role: {getRoleName(selectedRoleFilter)}
+                    </span>
+                )}
+            </div>
+
+            {/* Members Table */}
             <div className="table-card">
-                <h3>Committee Members ({committees.length})</h3>
                 <div className="table-responsive">
-                    <table className="committee-table">
+                    <table className="member-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>#</th>
                                 <th>Name</th>
                                 <th>Role</th>
                                 <th>Zone</th>
                                 <th>Mobile</th>
-                                <th>WhatsApp</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {committees.length === 0 ? (
+                            {filteredCommittees.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="empty-state">
-                                        No committee members found
+                                    <td colSpan="6" className="empty-state">
+                                        No members found
                                     </td>
                                 </tr>
                             ) : (
-                                committees.map(committee => (
+                                filteredCommittees.map((committee, index) => (
                                     <tr key={committee.committeeId}>
-                                        <td>{committee.committeeId}</td>
-                                        <td><strong>{committee.name}</strong></td>
-                                        <td>{committee.roleName}</td>
-                                        <td>{committee.zoneName}</td>
-                                        <td>{committee.mobile || '-'}</td>
-                                        <td>{committee.whatsapp || '-'}</td>
+                                        <td className="td-index">{index + 1}</td>
+                                        <td>
+                                            <div className="member-name">{committee.name}</div>
+                                            {committee.mobile && (
+                                                <div className="member-mobile">📱 {committee.mobile}</div>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <span className="role-badge">{committee.roleName || committee.roleId}</span>
+                                        </td>
+                                        <td>
+                                            <span className="zone-badge">{committee.zoneName || committee.zoneId}</span>
+                                        </td>
+                                        <td className="td-mobile">{committee.mobile || '-'}</td>
                                         <td>
                                             <div className="action-buttons">
                                                 <button
@@ -346,7 +427,7 @@ const CommitteeManagement = () => {
                                                 </button>
                                                 <button
                                                     className="btn-delete"
-                                                    onClick={() => handleDelete(committee.committeeId)}
+                                                    onClick={() => handleDelete(committee.committeeId, committee.name)}
                                                     title="Delete"
                                                 >
                                                     🗑️
@@ -362,54 +443,56 @@ const CommitteeManagement = () => {
             </div>
 
             <style>{`
-        .committee-management {
+        .member-management {
           max-width: 1400px;
           margin: 0 auto;
-          padding: 20px;
+          padding: 16px;
         }
 
         .header-section {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 24px;
+          margin-bottom: 20px;
         }
 
         .header-section h2 {
           margin: 0;
           color: var(--primary);
+          font-size: 1.4rem;
         }
 
         .form-card, .table-card {
           background: white;
-          padding: 24px;
+          padding: 20px;
           border-radius: 12px;
           box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-          margin-bottom: 24px;
+          margin-bottom: 20px;
         }
 
-        .form-card h3, .table-card h3 {
-          margin: 0 0 20px 0;
+        .form-card h3 {
+          margin: 0 0 16px 0;
           color: #2c3e50;
+          font-size: 1.1rem;
         }
 
         .form-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 20px;
-          margin-bottom: 20px;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 16px;
+          margin-bottom: 16px;
         }
 
         .form-group {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
         }
 
         .form-group label {
           font-weight: 600;
           color: #555;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
         }
 
         .form-group input,
@@ -417,7 +500,7 @@ const CommitteeManagement = () => {
           padding: 10px 12px;
           border: 1px solid #ddd;
           border-radius: 8px;
-          font-size: 1rem;
+          font-size: 0.95rem;
           font-family: 'Anek Malayalam', sans-serif;
           transition: border-color 0.2s;
         }
@@ -426,13 +509,13 @@ const CommitteeManagement = () => {
         .form-group select:focus {
           outline: none;
           border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 46, 125, 50), 0.1);
         }
 
         .form-actions {
           display: flex;
           gap: 12px;
           justify-content: flex-end;
-          margin-top: 20px;
         }
 
         .btn-primary {
@@ -445,10 +528,11 @@ const CommitteeManagement = () => {
           cursor: pointer;
           font-family: 'Anek Malayalam', sans-serif;
           transition: all 0.2s;
+          font-size: 0.9rem;
         }
 
         .btn-primary:hover {
-          background: var(--primary-dark);
+          opacity: 0.9;
           transform: translateY(-1px);
         }
 
@@ -462,75 +546,178 @@ const CommitteeManagement = () => {
           cursor: pointer;
           font-family: 'Anek Malayalam', sans-serif;
           transition: all 0.2s;
+          font-size: 0.9rem;
         }
 
         .btn-secondary:hover {
           background: #5a6268;
         }
 
+        /* Filter Section */
         .filter-section {
           display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 20px;
+          flex-wrap: wrap;
+          align-items: flex-end;
+          gap: 16px;
+          margin-bottom: 16px;
           padding: 16px;
-          background: #f8f9fa;
-          border-radius: 8px;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
 
-        .filter-section label {
+        .filter-group {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 160px;
+        }
+
+        .filter-group label {
           font-weight: 600;
-          color: #555;
+          color: #777;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
-        .zone-filter {
+        .filter-select {
           padding: 8px 12px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          font-size: 1rem;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          font-family: 'Anek Malayalam', sans-serif;
+          background: #fafafa;
+          transition: border-color 0.2s;
+        }
+
+        .filter-select:focus {
+          outline: none;
+          border-color: var(--primary);
+          background: white;
+        }
+
+        .search-group {
+          flex: 1;
           min-width: 200px;
         }
 
+        /* Summary Badges */
+        .summary-badges {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .badge {
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 600;
+        }
+
+        .badge-total {
+          background: #e8f5e9;
+          color: #2e7d32;
+        }
+
+        .badge-zone {
+          background: #e3f2fd;
+          color: #1565c0;
+        }
+
+        .badge-role {
+          background: #fff3e0;
+          color: #e65100;
+        }
+
+        /* Table */
         .table-responsive {
           overflow-x: auto;
         }
 
-        .committee-table {
+        .member-table {
           width: 100%;
           border-collapse: collapse;
         }
 
-        .committee-table th,
-        .committee-table td {
-          padding: 12px 16px;
+        .member-table th,
+        .member-table td {
+          padding: 10px 12px;
           text-align: left;
-          border-bottom: 1px solid #eee;
+          border-bottom: 1px solid #f0f0f0;
         }
 
-        .committee-table th {
+        .member-table th {
           background: #f8f9fa;
           font-weight: 600;
-          color: #555;
+          color: #666;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
           position: sticky;
           top: 0;
         }
 
-        .committee-table tbody tr:hover {
-          background: #f8f9fa;
+        .member-table tbody tr:hover {
+          background: #f5f9f5;
+        }
+
+        .td-index {
+          color: #aaa;
+          font-size: 0.85rem;
+          min-width: 30px;
+        }
+
+        .member-name {
+          font-weight: 600;
+          color: #333;
+        }
+
+        .member-mobile {
+          font-size: 0.8rem;
+          color: #999;
+          margin-top: 2px;
+        }
+
+        .role-badge {
+          display: inline-block;
+          padding: 3px 10px;
+          background: #f3e5f5;
+          color: #7b1fa2;
+          border-radius: 12px;
+          font-size: 0.82rem;
+          font-weight: 500;
+        }
+
+        .zone-badge {
+          display: inline-block;
+          padding: 3px 10px;
+          background: #e8f5e9;
+          color: #2e7d32;
+          border-radius: 12px;
+          font-size: 0.82rem;
+          font-weight: 500;
+        }
+
+        .td-mobile {
+          font-size: 0.9rem;
+          color: #555;
         }
 
         .action-buttons {
           display: flex;
-          gap: 8px;
+          gap: 6px;
         }
 
         .btn-edit,
         .btn-delete {
-          padding: 6px 10px;
+          padding: 5px 8px;
           border: none;
           border-radius: 6px;
           cursor: pointer;
-          font-size: 1rem;
+          font-size: 0.9rem;
           transition: all 0.2s;
         }
 
@@ -564,7 +751,7 @@ const CommitteeManagement = () => {
           color: #c62828;
           padding: 12px 16px;
           border-radius: 8px;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
           border-left: 4px solid #c62828;
         }
 
@@ -576,6 +763,10 @@ const CommitteeManagement = () => {
         }
 
         @media (max-width: 768px) {
+          .member-management {
+            padding: 10px;
+          }
+
           .form-grid {
             grid-template-columns: 1fr;
           }
@@ -586,8 +777,22 @@ const CommitteeManagement = () => {
             gap: 12px;
           }
 
-          .table-responsive {
-            overflow-x: scroll;
+          .filter-section {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .filter-group {
+            min-width: unset;
+          }
+
+          .td-mobile {
+            display: none;
+          }
+
+          .member-table th:nth-child(5),
+          .member-table td:nth-child(5) {
+            display: none;
           }
         }
       `}</style>
@@ -595,4 +800,4 @@ const CommitteeManagement = () => {
     );
 };
 
-export default CommitteeManagement;
+export default MemberManagement;

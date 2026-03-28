@@ -134,6 +134,7 @@ export const getUserAccessConfig = (user = null) => {
     showReportTab: true,
     showDashboardTab: isAdmin || isDistrictAdmin,
     showAdminTab: isAdmin,
+    showMembersTab: isAdmin || isZoneAdmin || isDistrictAdmin,
     defaultRoute
   };
 };
