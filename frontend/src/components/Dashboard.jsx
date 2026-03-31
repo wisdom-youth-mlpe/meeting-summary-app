@@ -62,10 +62,12 @@ const Dashboard = () => {
         let end = new Date();
 
         if (filterType === 'week') {
-            // Monday of this week
+            // Week runs Wednesday → Tuesday
+            // day: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
             const day = today.getDay();
-            const diff = today.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-            start.setDate(diff);
+            // days since last Wednesday: Wed=0,Thu=1,Fri=2,Sat=3,Sun=4,Mon=5,Tue=6
+            const daysSinceWed = (day + 4) % 7;
+            start.setDate(today.getDate() - daysSinceWed);
         } else if (filterType === 'month') {
             start.setDate(1); // 1st of month
         } else if (filterType === 'custom') {
@@ -234,14 +236,63 @@ const Dashboard = () => {
                             <p className="empty-state">ഒരു മണ്ഡലത്തിലും മീറ്റിംഗ് നടന്നിട്ടില്ല</p>
                         ) : (
                             <ol className="zone-list success-list">
-                                {zonesWithMeetings.map(z => (
-                                    <li key={z.zoneName}>
-                                        {z.zoneName} ({z.meetingCount || 1})
-                                    </li>
-                                ))}
+                                {zonesWithMeetings.map(z => {
+                                    const dateStr = z.lastMeetingDate 
+                                        ? `- ${new Date(z.lastMeetingDate + 'T00:00:00').toLocaleDateString('ml-IN', { day: 'numeric', month: 'short' })} ` 
+                                        : '';
+                                    return (
+                                        <li key={z.zoneName}>
+                                            {z.zoneName} {dateStr}({z.meetingCount || 1})
+                                        </li>
+                                    );
+                                })}
                             </ol>
                         )}
                     </div>
+
+                    {/* WhatsApp Message Card */}
+                    {(() => {
+                        const withList = (zonesWithMeetings || []).map((z, i) => {
+                            let dateStr = '';
+                            if (z.lastMeetingDate) {
+                                const d = new Date(z.lastMeetingDate + 'T00:00:00');
+                                dateStr = ` - ${d.toLocaleDateString('ml-IN', { day: 'numeric', month: 'long' })}`;
+                            }
+                            return `${i + 1}. ${z.zoneName}${dateStr}`;
+                        }).join('\n');
+                        const withoutList = noMeetingZones.map((z, i) => `${i + 1}. ${z.zoneName}`).join('\n');
+                        // Build human-readable date range from startDate / endDate state
+                        const fmtRange = (s, e) => {
+                            if (!s || !e) return '';
+                            const opts = { day: 'numeric', month: 'long' };
+                            const sd = new Date(s + 'T00:00:00');
+                            const ed = new Date(e + 'T00:00:00');
+                            return `(${sd.toLocaleDateString('ml-IN', opts)} - ${ed.toLocaleDateString('ml-IN', opts)})`;
+                        };
+                        const dateRange = dateFilter === 'week' ? fmtRange(startDate, endDate) : '';
+                        const whatsappMsg =
+                            `ഈ ആഴ്ചയിൽ മീറ്റിംഗ് കൂടിയ മണ്ഡലങ്ങൾ ${dateRange}\n${withList || 'ഒന്നുമില്ല'}\n\nഈ ആഴ്ചയിൽ മീറ്റിംഗ് കൂടാത്ത മണ്ഡലങ്ങൾ\n${withoutList || 'ഒന്നുമില്ല'}`;
+                        const handleCopyWhatsApp = () => {
+                            navigator.clipboard.writeText(whatsappMsg).then(() => {
+                                const btn = document.getElementById('wa-copy-btn');
+                                if (btn) {
+                                    btn.textContent = '✅ Copied!';
+                                    setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+                                }
+                            });
+                        };
+                        return (
+                            <div className="card full-width whatsapp-card">
+                                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <h3 style={{ margin: 0 }}>📲 WhatsApp Message</h3>
+                                    <button id="wa-copy-btn" className="wa-copy-btn" onClick={handleCopyWhatsApp}>
+                                        📋 Copy
+                                    </button>
+                                </div>
+                                <pre className="whatsapp-preview">{whatsappMsg}</pre>
+                            </div>
+                        );
+                    })()}
 
                     {/* Members with 3+ Consecutive Leaves */}
                     <div className="card full-width">
@@ -685,6 +736,42 @@ const Dashboard = () => {
                 }
                 .print-btn:hover {
                     background: #219a52;
+                }
+                .whatsapp-card {
+                    border: 2px solid #25D366;
+                    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                }
+                .whatsapp-card h3 {
+                    color: #128C7E;
+                }
+                .wa-copy-btn {
+                    padding: 8px 20px;
+                    background: #25D366;
+                    color: white;
+                    border: none;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    transition: background 0.2s, transform 0.1s;
+                    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+                }
+                .wa-copy-btn:hover {
+                    background: #128C7E;
+                    transform: scale(1.04);
+                }
+                .whatsapp-preview {
+                    background: #ffffff;
+                    border: 1px solid #b7ebc8;
+                    border-radius: 10px;
+                    padding: 16px 20px;
+                    font-family: inherit;
+                    font-size: 0.97rem;
+                    color: #1a3a2a;
+                    white-space: pre-wrap;
+                    line-height: 1.7;
+                    margin: 0;
+                    box-shadow: inset 0 1px 4px rgba(0,0,0,0.04);
                 }
                 .report-view .card-header {
                     display: flex;

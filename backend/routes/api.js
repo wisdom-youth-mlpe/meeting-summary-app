@@ -644,16 +644,25 @@ router.get('/dashboard/stats', async (req, res) => {
       filteredMeetings = meetings.filter(m => zoneNames.includes(m.zoneName));
     }
 
-    // Count meetings per zone
+    // Count meetings per zone and track the last meeting date
     const zoneMeetingCounts = {};
+    const zoneLastMeetingDate = {};
     filteredMeetings.forEach(m => {
       zoneMeetingCounts[m.zoneName] = (zoneMeetingCounts[m.zoneName] || 0) + 1;
+      const currentLastDate = zoneLastMeetingDate[m.zoneName];
+      if (!currentLastDate || new Date(m.date) > new Date(currentLastDate)) {
+        zoneLastMeetingDate[m.zoneName] = m.date;
+      }
     });
 
     // Zones WITH meetings
     const zonesWithMeetings = zoneNames
       .filter(z => zoneMeetingCounts[z] > 0)
-      .map(z => ({ zoneName: z, meetingCount: zoneMeetingCounts[z] }));
+      .map(z => ({ 
+        zoneName: z, 
+        meetingCount: zoneMeetingCounts[z],
+        lastMeetingDate: zoneLastMeetingDate[z]
+      }));
 
     // Zones WITHOUT meetings
     const noMeetingZones = zoneNames

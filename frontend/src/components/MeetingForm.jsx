@@ -391,6 +391,9 @@ const MeetingForm = () => {
     setDate(editData.date || getTodayDate());
     setStartTime(editData.startTime || '');
     setEndTime(editData.endTime || '');
+    setSwagatham(editData.swagatham || '');
+    setAdhyakshan(editData.adhyakshan || '');
+    setNandhi(editData.nandhi || '');
 
     if (Array.isArray(editData.agendas)) {
       setSelectedAgendas(editData.agendas);
@@ -669,11 +672,6 @@ const MeetingForm = () => {
       : [];
 
     // Build meeting role sentences for the end of report
-    const getFirstName = (fullName) => {
-      if (!fullName) return '';
-      return fullName.split(' ')[0];
-    };
-
     // Look up role from attendance data
     const getRoleByName = (name) => {
       if (!name || !meetingData.attendance) return '';
@@ -687,14 +685,14 @@ const MeetingForm = () => {
 
     const roleSentences = [];
     if (meetingData.adhyakshan) {
-      roleSentences.push(`മീറ്റിംഗിൽ ${adhyakshanRole} ${getFirstName(meetingData.adhyakshan)} അധ്യക്ഷനായിരുന്നു.`);
+      roleSentences.push(`മീറ്റിംഗിൽ ${adhyakshanRole} ${meetingData.adhyakshan} അധ്യക്ഷനായിരുന്നു.`);
     }
     if (meetingData.swagatham && meetingData.nandhi) {
-      roleSentences.push(`${swagathamRole} ${getFirstName(meetingData.swagatham)} സ്വാഗതവും ${nandhiRole} ${getFirstName(meetingData.nandhi)} നന്ദിയും പറഞ്ഞു.`);
+      roleSentences.push(`${swagathamRole} ${meetingData.swagatham} സ്വാഗതവും ${nandhiRole} ${meetingData.nandhi} നന്ദിയും പറഞ്ഞു.`);
     } else if (meetingData.swagatham) {
-      roleSentences.push(`${swagathamRole} ${getFirstName(meetingData.swagatham)} സ്വാഗതം പറഞ്ഞു.`);
+      roleSentences.push(`${swagathamRole} ${meetingData.swagatham} സ്വാഗതം പറഞ്ഞു.`);
     } else if (meetingData.nandhi) {
-      roleSentences.push(`${nandhiRole} ${getFirstName(meetingData.nandhi)} നന്ദി പറഞ്ഞു.`);
+      roleSentences.push(`${nandhiRole} ${meetingData.nandhi} നന്ദി പറഞ്ഞു.`);
     }
 
     const lines = [
@@ -896,7 +894,6 @@ const MeetingForm = () => {
           </div>
           
           ${(() => {
-        const getFirstName = (fullName) => fullName ? fullName.split(' ')[0] : '';
         const getRoleByName = (name) => {
           if (!name || !reportData.meetingData.attendance) return '';
           const person = reportData.meetingData.attendance.find(a => a.name === name);
@@ -909,14 +906,14 @@ const MeetingForm = () => {
 
         const sentences = [];
         if (reportData.meetingData.adhyakshan) {
-          sentences.push(`മീറ്റിംഗിൽ ${adhyakshanRole} ${getFirstName(reportData.meetingData.adhyakshan)} അധ്യക്ഷനായിരുന്നു.`);
+          sentences.push(`മീറ്റിംഗിൽ ${adhyakshanRole} ${reportData.meetingData.adhyakshan} അധ്യക്ഷനായിരുന്നു.`);
         }
         if (reportData.meetingData.swagatham && reportData.meetingData.nandhi) {
-          sentences.push(`${swagathamRole} ${getFirstName(reportData.meetingData.swagatham)} സ്വാഗതവും ${nandhiRole} ${getFirstName(reportData.meetingData.nandhi)} നന്ദിയും പറഞ്ഞു.`);
+          sentences.push(`${swagathamRole} ${reportData.meetingData.swagatham} സ്വാഗതവും ${nandhiRole} ${reportData.meetingData.nandhi} നന്ദിയും പറഞ്ഞു.`);
         } else if (reportData.meetingData.swagatham) {
-          sentences.push(`${swagathamRole} ${getFirstName(reportData.meetingData.swagatham)} സ്വാഗതം പറഞ്ഞു.`);
+          sentences.push(`${swagathamRole} ${reportData.meetingData.swagatham} സ്വാഗതം പറഞ്ഞു.`);
         } else if (reportData.meetingData.nandhi) {
-          sentences.push(`${nandhiRole} ${getFirstName(reportData.meetingData.nandhi)} നന്ദി പറഞ്ഞു.`);
+          sentences.push(`${nandhiRole} ${reportData.meetingData.nandhi} നന്ദി പറഞ്ഞു.`);
         }
         if (sentences.length > 0) {
           return `<div style="margin-top: 16px; padding: 10px; background-color: #f9f9f9; border-radius: 8px;"><p style="margin: 0; font-size: 14px; font-style: italic;">${sentences.join(' ')}</p></div>`;

@@ -185,9 +185,42 @@ const MeetingReport = () => {
       }
     }
 
-    const getFirstName = (fullName) => {
+    const formatNameWithoutInitials = (fullName) => {
       if (!fullName) return '';
-      return fullName.split(' ')[0];
+      const malayalamInitials = new Set([
+        'എ', 'ബി', 'സി', 'ഡി', 'ഇ', 'എഫ്', 'ജി', 'എച്ച്', 'ഐ', 'ജെ', 
+        'കെ', 'എൽ', 'എം', 'എൻ', 'ഒ', 'പി', 'ക്യു', 'ആർ', 'എസ്', 'ടി', 
+        'യു', 'വി', 'ഡബ്ല്യു', 'എക്സ്', 'വൈ', 'ഇസഡ്',
+        'ക', 'ഖ', 'ഗ', 'ഘ', 'ങ', 
+        'ച', 'ഛ', 'ജ', 'ഝ', 'ഞ', 
+        'ട', 'ഠ', 'ഡ', 'ഢ', 'ണ', 
+        'ത', 'ഥ', 'ദ', 'ധ', 'ന', 
+        'പ', 'ഫ', 'ബ', 'ഭ', 'മ', 
+        'യ', 'ര', 'ല', 'വ', 'ശ', 'ഷ', 'സ', 'ഹ', 'ള', 'ഴ', 'റ',
+        // Common combinations typed without space
+        'പികെ', 'കെപി', 'വികെ', 'എംകെ', 'സിഎച്ച്', 'ടിയു',
+        'വിപി', 'പിഎം', 'എകെ', 'പിടി', 'കെഎം', 'എംപി',
+        'കെകെ', 'എഎ', 'ബിബി', 'സിസി', 'പിസി', 'ടിപി', 'വിവി'
+      ]);
+      
+      // Split by space, dot, or comma to handle "name, p.k" or "name p k"
+      return fullName.split(/[\s,]+/).filter(part => {
+        // Remove dots, Zero Width Joiners, non-break spaces, and common invisible chars
+        const cleanPart = part.replace(/[\.\u200B-\u200D\uFEFF]/g, '').trim();
+        if (!cleanPart) return false;
+        
+        // Handle lower/upper case English initials (1-4 chars)
+        // Check if character is strictly alphabetical and 1-2 chars long
+        if (/^[a-zA-Z]{1,2}$/.test(cleanPart)) return false;
+        // Check if it's all uppercase or exactly "pk", "kp", etc.
+        if (/^[A-Z]{1,4}$/.test(cleanPart)) return false;
+        if (/^[a-zA-Z]{1,4}$/.test(cleanPart) && cleanPart.toLowerCase().includes('pk')) return false; 
+        if (/^[a-zA-Z]{1,4}$/.test(cleanPart) && cleanPart.toLowerCase().includes('kp')) return false;
+        if (/^[a-zA-Z]{1,4}$/.test(cleanPart) && cleanPart.toLowerCase().includes('ch')) return false;
+
+        if (malayalamInitials.has(cleanPart)) return false;
+        return true;
+      }).join(' ').trim();
     };
 
     // Look up role from attendance data
@@ -198,13 +231,14 @@ const MeetingReport = () => {
     };
 
     const adhyakshanRole = getRoleByName(selectedMeetingData.adhyakshan);
-    const adhyakshanLine = selectedMeetingData.adhyakshan
-      ? `മീറ്റിംഗിൽ ${adhyakshanRole} ${getFirstName(selectedMeetingData.adhyakshan)} അധ്യക്ഷനായിരുന്നു.`
+    const formattedAdhyakshan = formatNameWithoutInitials(selectedMeetingData.adhyakshan);
+    const adhyakshanLine = formattedAdhyakshan
+      ? `മീറ്റിംഗിൽ ${adhyakshanRole} ${formattedAdhyakshan} അധ്യക്ഷനായിരുന്നു.`
       : '';
 
     let welcomeVoteLine = '';
-    const sName = getFirstName(selectedMeetingData.swagatham);
-    const nName = getFirstName(selectedMeetingData.nandhi);
+    const sName = formatNameWithoutInitials(selectedMeetingData.swagatham);
+    const nName = formatNameWithoutInitials(selectedMeetingData.nandhi);
 
     const sRole = getRoleByName(selectedMeetingData.swagatham);
     const nRole = getRoleByName(selectedMeetingData.nandhi);
