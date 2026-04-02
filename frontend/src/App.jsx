@@ -13,9 +13,6 @@ const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const UserManagement = React.lazy(() => import('./components/UserManagement'));
 const QHLSDashboard = React.lazy(() => import('./components/QHLSDashboard'));
 const MemberManagement = React.lazy(() => import('./components/MemberManagement'));
-const CampaignDashboard = React.lazy(() => import('./components/CampaignDashboard'));
-const CampaignDetail = React.lazy(() => import('./components/CampaignDetail'));
-const CampaignForm = React.lazy(() => import('./components/CampaignForm'));
 
 // Layout component for authenticated pages
 const AuthenticatedLayout = ({ children }) => {
@@ -195,46 +192,6 @@ function App() {
             <ProtectedRoute requiredAnyRole={['admin', 'zone_admin', 'district_admin']}>
               <AuthenticatedLayout>
                 <MemberManagement />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/campaigns"
-          element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <CampaignDashboard />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/campaigns/new"
-          element={
-            <ProtectedRoute requiredAnyRole={['admin', 'campaign_manager']}>
-              <AuthenticatedLayout>
-                <CampaignForm />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/campaigns/:campaignId"
-          element={
-            <ProtectedRoute>
-              <AuthenticatedLayout>
-                <CampaignDetail />
-              </AuthenticatedLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/campaigns/:campaignId/edit"
-          element={
-            <ProtectedRoute requiredAnyRole={['admin', 'campaign_manager']}>
-              <AuthenticatedLayout>
-                <CampaignForm />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

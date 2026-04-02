@@ -86,10 +86,6 @@ app.use('/api/users', usersRoutes);
 // API routes (protected, require authentication)
 app.use('/api', apiRoutes);
 
-// Campaign routes (protected, scoped by user role)
-const campaignRoutes = require('./routes/campaigns');
-app.use('/api/campaigns', campaignRoutes);
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

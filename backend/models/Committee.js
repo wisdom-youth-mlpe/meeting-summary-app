@@ -32,15 +32,6 @@ const committeeSchema = new mongoose.Schema({
     default: '',
     trim: true,
   },
-  departments: [{
-    type: String,
-    trim: true,
-  }],
-  committeeLevel: {
-    type: String,
-    enum: ['district', 'zone', 'unit'],
-    default: 'zone',
-  },
 }, {
   timestamps: true,
 });
