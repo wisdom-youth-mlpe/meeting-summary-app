@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   },
   roles: [{
     type: String,
-    enum: ['admin', 'district_admin', 'zone_admin'],
+    enum: ['admin', 'district_admin', 'zone_admin', 'campaign_manager', 'caller'],
   }],
   zoneAccess: [{
     type: String, // Zone IDs

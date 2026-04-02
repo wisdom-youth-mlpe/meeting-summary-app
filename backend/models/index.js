@@ -7,6 +7,8 @@ const Committee = require('./Committee');
 const CommitteeRole = require('./CommitteeRole');
 const Meeting = require('./Meeting');
 const Agenda = require('./Agenda');
+const Campaign = require('./Campaign');
+const { CampaignCall, CALL_STATUSES } = require('./CampaignCall');
 
 module.exports = {
   District,
@@ -17,5 +19,8 @@ module.exports = {
   CommitteeRole,
   Meeting,
   Agenda,
+  Campaign,
+  CampaignCall,
+  CALL_STATUSES,
 };
 

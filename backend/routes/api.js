@@ -127,6 +127,21 @@ router.get('/zones', async (req, res) => {
 });
 
 /**
+ * GET /api/districts
+ * Fetch all districts
+ */
+router.get('/districts', async (req, res) => {
+  try {
+    const District = require('../models/District');
+    const districts = await District.find({}).sort({ name: 1 }).lean();
+    res.json({ success: true, districts });
+  } catch (error) {
+    console.error('Error in /api/districts:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/attendees/:zoneId
  * Fetch attendees for a specific zone from MongoDB
  */

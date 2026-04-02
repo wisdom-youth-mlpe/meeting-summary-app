@@ -252,15 +252,53 @@ const Dashboard = () => {
 
                     {/* WhatsApp Message Card */}
                     {(() => {
-                        const withList = (zonesWithMeetings || []).map((z, i) => {
-                            let dateStr = '';
-                            if (z.lastMeetingDate) {
-                                const d = new Date(z.lastMeetingDate + 'T00:00:00');
-                                dateStr = ` - ${d.toLocaleDateString('ml-IN', { day: 'numeric', month: 'long' })}`;
+                        // Helper to find the date of a specific day of week within a date range
+                        const getScheduledDateInRange = (sDate, eDate, targetDayOfWeek) => {
+                            if (!sDate || !eDate) return null;
+                            let curr = new Date(sDate + 'T00:00:00');
+                            const end = new Date(eDate + 'T00:00:00');
+                            while(curr <= end) {
+                                if(curr.getDay() === targetDayOfWeek) {
+                                    return new Date(curr);
+                                }
+                                curr.setDate(curr.getDate() + 1);
                             }
-                            return `${i + 1}. ${z.zoneName}${dateStr}`;
+                            return null;
+                        };
+
+                        const allZonesStatus = [
+                            ...(zonesWithMeetings || []).map(z => ({ ...z, conducted: true })),
+                            ...noMeetingZones.map(z => ({ ...z, conducted: false }))
+                        ];
+                        
+                        allZonesStatus.sort((a, b) => a.zoneName.localeCompare(b.zoneName));
+
+                        const zonesListFormatted = allZonesStatus.map((z, i) => {
+                            // Currently, there is no scheduled day set per zone in DB.
+                            // Defaulting to Thursday (4) as a placeholder for demonstration.
+                            const scheduledDayOfWeek = 4;
+                            const scheduledDateObj = getScheduledDateInRange(startDate, endDate, scheduledDayOfWeek);
+                            
+                            let dateStr = '';
+                            let tick = '⏳';
+                            
+                            if (z.conducted && z.lastMeetingDate) {
+                                tick = '✅';
+                                const d = new Date(z.lastMeetingDate + 'T00:00:00');
+                                const dateOfMonth = d.toLocaleDateString('ml-IN', { day: 'numeric', month: 'long' });
+                                const dayOfWeek = d.toLocaleDateString('ml-IN', { weekday: 'long' });
+                                dateStr = ` - ${dateOfMonth} (${dayOfWeek})`;
+                            } else {
+                                if (scheduledDateObj) {
+                                    const dateOfMonth = scheduledDateObj.toLocaleDateString('ml-IN', { day: 'numeric', month: 'long' });
+                                    const dayOfWeek = scheduledDateObj.toLocaleDateString('ml-IN', { weekday: 'long' });
+                                    dateStr = ` - ${dateOfMonth} (${dayOfWeek})`;
+                                }
+                            }
+                            
+                            return `${tick} ${z.zoneName}${dateStr}`;
                         }).join('\n');
-                        const withoutList = noMeetingZones.map((z, i) => `${i + 1}. ${z.zoneName}`).join('\n');
+
                         // Build human-readable date range from startDate / endDate state
                         const fmtRange = (s, e) => {
                             if (!s || !e) return '';
@@ -270,8 +308,14 @@ const Dashboard = () => {
                             return `(${sd.toLocaleDateString('ml-IN', opts)} - ${ed.toLocaleDateString('ml-IN', opts)})`;
                         };
                         const dateRange = dateFilter === 'week' ? fmtRange(startDate, endDate) : '';
-                        const whatsappMsg =
-                            `ഈ ആഴ്ചയിൽ മീറ്റിംഗ് കൂടിയ മണ്ഡലങ്ങൾ ${dateRange}\n${withList || 'ഒന്നുമില്ല'}\n\nഈ ആഴ്ചയിൽ മീറ്റിംഗ് കൂടാത്ത മണ്ഡലങ്ങൾ\n${withoutList || 'ഒന്നുമില്ല'}`;
+                        const currentDateStr = new Date().toLocaleDateString('ml-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+                        const whatsappMsg = `തീയതി: ${currentDateStr}
+
+*ഈ ആഴ്ചയിലെ മീറ്റിംഗ് റിപ്പോർട്ട് സ്റ്റാറ്റസ്* ${dateRange}
+
+${zonesListFormatted}
+
+💡 എല്ലാ മണ്ഡലങ്ങളും അവരവരുടെ നിശ്ചിത ദിവസങ്ങളിൽ തന്നെ മീറ്റിംഗ് നടത്താൻ ശ്രദ്ധിക്കുക.`;
                         const handleCopyWhatsApp = () => {
                             navigator.clipboard.writeText(whatsappMsg).then(() => {
                                 const btn = document.getElementById('wa-copy-btn');
