@@ -1197,7 +1197,7 @@ const MeetingForm = () => {
 
   return (
     <div className="container">
-      <h1>മീറ്റിംഗ് റിപ്പോർട്ട്</h1>
+      <h1>{isEditing ? 'റിപ്പോർട്ട് എഡിറ്റ് ചെയ്യുക' : 'മീറ്റിംഗ് റിപ്പോർട്ട്'}</h1>
 
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
@@ -1287,13 +1287,6 @@ const MeetingForm = () => {
               id="swagatham"
               value={swagatham}
               onChange={(e) => setSwagatham(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '8px',
-                border: '2px solid #e0e0e0',
-                fontSize: '1rem',
-              }}
             >
               <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
               {attendees.map((attendee, index) => (
@@ -1310,13 +1303,6 @@ const MeetingForm = () => {
               id="adhyakshan"
               value={adhyakshan}
               onChange={(e) => setAdhyakshan(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '8px',
-                border: '2px solid #e0e0e0',
-                fontSize: '1rem',
-              }}
             >
               <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
               {attendees.map((attendee, index) => (
@@ -1333,13 +1319,6 @@ const MeetingForm = () => {
               id="nandhi"
               value={nandhi}
               onChange={(e) => setNandhi(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '8px',
-                border: '2px solid #e0e0e0',
-                fontSize: '1rem',
-              }}
             >
               <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
               {attendees.map((attendee, index) => (
@@ -1354,7 +1333,7 @@ const MeetingForm = () => {
         <div className="submit-section">
           <button
             type="submit"
-            className="submit-button btn-success"
+            className="submit-button"
             disabled={submitting || !selectedZone}
           >
             {submitting
@@ -1447,7 +1426,8 @@ const MeetingForm = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          backgroundColor: 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(8px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1455,18 +1435,21 @@ const MeetingForm = () => {
           zIndex: 9999,
         }}>
           <div style={{
-            width: '60px',
-            height: '60px',
-            border: '5px solid #f3f3f3',
-            borderTop: '5px solid #3498db',
+            width: '64px',
+            height: '64px',
+            border: '4px solid rgba(163, 230, 53, 0.1)',
+            borderTop: '4px solid var(--primary)',
             borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
+            animation: 'spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+            boxShadow: '0 0 20px rgba(163, 230, 53, 0.2)',
           }}></div>
           <p style={{
             color: 'white',
-            marginTop: '20px',
-            fontSize: '18px',
-            fontWeight: '600',
+            marginTop: '24px',
+            fontSize: '1.1rem',
+            fontWeight: '800',
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
           }}>സേവ് ചെയ്യുന്നു...</p>
           <style>{`
             @keyframes spin {

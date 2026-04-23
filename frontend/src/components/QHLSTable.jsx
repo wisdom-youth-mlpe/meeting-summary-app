@@ -34,75 +34,77 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
     wrapper: {
       overflowX: 'auto',
       marginTop: '12px',
-      borderRadius: '14px',
-      border: '2px solid #e0e0e0',
-      background: '#ffffff',
+      borderRadius: 'var(--radius-lg)',
+      border: '1px solid var(--gray-100)',
+      background: 'var(--white)',
+      boxShadow: 'var(--shadow-sm)',
     },
     table: {
       width: '100%',
       borderCollapse: 'collapse',
-      minWidth: '480px',
+      minWidth: '600px',
     },
     th: {
-      padding: '14px 12px',
+      padding: '16px 12px',
       textAlign: 'left',
-      background: 'linear-gradient(135deg, #6c5ce7, #5549c7)',
-      color: 'white',
-      fontWeight: '600',
-      fontSize: '0.85rem',
-      whiteSpace: 'nowrap',
-    },
-    thFirst: {
-      borderRadius: '12px 0 0 0',
-    },
-    thLast: {
-      borderRadius: '0 12px 0 0',
+      background: 'var(--gray-50)',
+      color: 'var(--gray-500)',
+      fontWeight: '700',
+      fontSize: '0.75rem',
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+      borderBottom: '1px solid var(--gray-100)',
     },
     td: {
-      padding: '10px 8px',
-      borderBottom: '1px solid #eeeeee',
+      padding: '12px 8px',
+      borderBottom: '1px solid var(--gray-50)',
     },
     input: {
       width: '100%',
       padding: '10px 12px',
-      border: '2px solid #eeeeee',
-      borderRadius: '8px',
+      border: '1px solid var(--gray-200)',
+      borderRadius: 'var(--radius-md)',
       fontSize: '0.9rem',
-      transition: 'all 0.2s ease',
-      background: '#fafafa',
+      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+      background: 'var(--gray-50)',
+      color: 'var(--gray-900)',
     },
     inputDisabled: {
-      background: '#f0f0f0',
-      color: '#757575',
+      background: 'var(--gray-100)',
+      color: 'var(--gray-400)',
       cursor: 'not-allowed',
+      border: '1px solid var(--gray-200)',
     },
     inputNumber: {
       textAlign: 'center',
       width: '70px',
     },
     mobileCard: {
-      padding: '16px',
-      marginBottom: '12px',
-      background: '#ffffff',
-      borderRadius: '12px',
-      border: '2px solid #eeeeee',
+      padding: '24px',
+      marginBottom: '16px',
+      background: 'var(--white)',
+      borderRadius: 'var(--radius-lg)',
+      border: '1px solid var(--gray-100)',
+      boxShadow: 'var(--shadow-sm)',
     },
     mobileLabel: {
-      fontSize: '0.8rem',
-      color: '#757575',
-      marginBottom: '4px',
-      fontWeight: '500',
+      fontSize: '0.7rem',
+      color: 'var(--gray-400)',
+      marginBottom: '6px',
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
     },
     mobileValue: {
-      fontSize: '0.95rem',
-      color: '#424242',
-      fontWeight: '600',
-      marginBottom: '12px',
+      fontSize: '1rem',
+      color: 'var(--accent)',
+      fontWeight: '800',
+      marginBottom: '16px',
     },
     mobileInputGroup: {
       display: 'grid',
       gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '12px',
+      gap: '16px',
     },
     mobileInputWrapper: {
       display: 'flex',
@@ -211,12 +213,12 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
       <table style={styles.table}>
         <thead>
           <tr>
-            <th style={{ ...styles.th, ...styles.thFirst }}>യൂണിറ്റ്</th>
+            <th style={styles.th}>യൂണിറ്റ്</th>
             <th style={{ ...styles.th, textAlign: 'center' }}>QHLS</th>
             <th style={styles.th}>ദിവസം</th>
             <th style={styles.th}>ഫാക്കൽറ്റി</th>
             <th style={styles.th}>പുരുഷന്മാർ</th>
-            <th style={{ ...styles.th, ...styles.thLast }}>സ്ത്രീകൾ</th>
+            <th style={styles.th}>സ്ത്രീകൾ</th>
           </tr>
         </thead>
         <tbody>

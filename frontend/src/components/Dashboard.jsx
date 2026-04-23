@@ -629,28 +629,29 @@ const Dashboard = () => {
 
     return (
         <div className="container dashboard-container">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                <h2 className="page-title" style={{ margin: 0 }}>Dashboard</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+                <h1 className="page-title" style={{ margin: 0 }}>Dashboard</h1>
                 {isDistrictAdmin && (
                     <span style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        padding: '6px 14px',
-                        borderRadius: '20px',
+                        background: 'var(--accent)',
+                        color: 'var(--primary)',
+                        padding: '8px 20px',
+                        borderRadius: 'var(--radius-full)',
                         fontSize: '0.85rem',
-                        fontWeight: '600',
-                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                        fontWeight: '800',
+                        boxShadow: 'var(--shadow-md)',
+                        border: '1px solid rgba(163, 230, 53, 0.3)'
                     }}>
-                        📊 District View
+                        DISTRICT VIEW
                     </span>
                 )}
             </div>
             {dateFilter === 'week' && stats?.currentWeek && (
-                <h4 className="week-subtitle">Week {stats.currentWeek}</h4>
+                <h4 className="week-subtitle">WEEK {stats.currentWeek}</h4>
             )}
             {dateFilter === 'month' && (
                 <h4 className="week-subtitle">
-                    {new Date().toLocaleString('ml-IN', { month: 'long' })}
+                    {new Date().toLocaleString('ml-IN', { month: 'long' }).toUpperCase()}
                 </h4>
             )}
 
@@ -670,300 +671,184 @@ const Dashboard = () => {
 
             <style>{`
                 .dashboard-container {
-                    padding-bottom: 50px;
+                    padding-bottom: 120px;
                     max-width: 1200px;
                     margin: 0 auto;
                 }
                 .page-title {
                     margin-bottom: 20px;
-                    color: #2c3e50;
+                    color: var(--accent);
+                    font-weight: 800;
+                    letter-spacing: -0.02em;
                 }
                 .week-subtitle {
-                    margin: -10px 0 15px 0;
-                    color: #333;
-                    font-size: 1rem;
-                    font-weight: 600;
-                }
-                .no-meeting-card {
-                    text-align: center;
-                    padding: 40px 20px;
-                    background: #fff3cd;
-                    border: 1px solid #ffeeba;
-                }
-                .no-meeting-card h3 {
-                    color: #856404;
-                    margin-bottom: 10px;
-                }
-                .meetings-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-                .meetings-table th,
-                .meetings-table td {
-                    padding: 12px 15px;
-                    text-align: left;
-                    border-bottom: 1px solid #eee;
-                }
-                .meetings-table th {
-                    background: #f8f9fa;
-                    font-weight: 600;
-                    color: #555;
-                }
-                .view-btn {
-                    padding: 6px 16px;
-                    background: #3498db;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 0.9rem;
-                }
-                .view-btn:hover {
-                    background: #2980b9;
-                }
-                .view-btn:disabled {
-                    background: #bdc3c7;
-                    cursor: not-allowed;
-                }
-                .print-btn {
-                    padding: 8px 16px;
-                    background: #27ae60;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 0.9rem;
-                }
-                .print-btn:hover {
-                    background: #219a52;
-                }
-                .whatsapp-card {
-                    border: 2px solid #25D366;
-                    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-                }
-                .whatsapp-card h3 {
-                    color: #128C7E;
-                }
-                .wa-copy-btn {
-                    padding: 8px 20px;
-                    background: #25D366;
-                    color: white;
-                    border: none;
-                    border-radius: 20px;
-                    cursor: pointer;
+                    margin: -10px 0 24px 0;
+                    color: var(--gray-500);
                     font-size: 0.9rem;
                     font-weight: 600;
-                    transition: background 0.2s, transform 0.1s;
-                    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
                 }
-                .wa-copy-btn:hover {
-                    background: #128C7E;
-                    transform: scale(1.04);
-                }
-                .whatsapp-preview {
-                    background: #ffffff;
-                    border: 1px solid #b7ebc8;
-                    border-radius: 10px;
-                    padding: 16px 20px;
-                    font-family: inherit;
-                    font-size: 0.97rem;
-                    color: #1a3a2a;
-                    white-space: pre-wrap;
-                    line-height: 1.7;
-                    margin: 0;
-                    box-shadow: inset 0 1px 4px rgba(0,0,0,0.04);
-                }
-                .report-view .card-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    gap: 15px;
-                    margin-bottom: 20px;
-                    flex-wrap: wrap;
-                }
-                .report-content-wrapper {
-                    background: #f8f9fa;
-                    padding: 20px;
-                    border-radius: 8px;
-                }
-                .report-section {
-                    margin-bottom: 20px;
-                    padding-bottom: 15px;
-                    border-bottom: 1px solid #e0e0e0;
-                }
-                .report-section:last-child {
-                    border-bottom: none;
-                    margin-bottom: 0;
-                }
-                .report-section h4 {
-                    margin: 0 0 10px 0;
-                    color: #2c3e50;
-                }
-                .report-section pre {
-                    margin: 0;
-                    white-space: pre-wrap;
-                    font-family: inherit;
-                    font-size: 0.95rem;
-                    color: #333;
-                }
-                @media print {
-                    .dashboard-controls,
-                    .btn-back,
-                    .print-btn,
-                    nav {
-                        display: none !important;
-                    }
-                    .report-view {
-                        box-shadow: none;
-                        border: none;
-                    }
-                }
+                
                 .card {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-                    border: 1px solid #eee;
+                    background: var(--white);
+                    border-radius: var(--radius-xl);
+                    padding: var(--space-xl);
+                    box-shadow: var(--shadow-md);
+                    border: 1px solid rgba(0, 0, 0, 0.02);
+                    margin-bottom: var(--space-lg);
+                    transition: all 0.3s ease;
                 }
-                .dashboard-controls {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 20px;
-                    align-items: flex-end;
-                    margin-bottom: 25px;
-                    background: #f8f9fa;
+                .card:hover {
+                    box-shadow: var(--shadow-lg);
+                    transform: translateY(-2px);
                 }
-                .control-group {
+                
+                .kpi-card {
+                    text-align: center;
                     display: flex;
                     flex-direction: column;
-                    gap: 5px;
+                    justify-content: center;
+                    aspect-ratio: 1;
+                    min-height: 200px;
                 }
-                .control-group.right {
-                    margin-left: auto;
+                
+                .kpi-card .number {
+                    font-size: 3rem;
+                    font-weight: 900;
+                    color: var(--accent);
+                    line-height: 1;
+                    margin: 12px 0;
+                    letter-spacing: -0.05em;
                 }
-                .control-group label {
-                    font-size: 0.9rem;
-                    color: #666;
-                    font-weight: 500;
+                
+                .kpi-card h3 {
+                    margin: 0;
+                    font-size: 0.85rem;
+                    color: var(--gray-500);
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
                 }
-                .btn-group {
-                    display: flex;
-                    border: 1px solid #ddd;
-                    border-radius: 6px;
-                    overflow: hidden;
-                }
-                .btn-group button {
-                    background: white;
-                    border: none;
-                    padding: 8px 16px;
-                    cursor: pointer;
-                    border-right: 1px solid #ddd;
-                    font-size: 0.9rem;
-                    color: black;
-                }
-                .btn-group button:last-child {
-                    border-right: none;
-                }
-                .btn-group button.active {
-                    background: #3498db;
-                    color: white;
-                }
-                .dates {
-                    flex-direction: row;
-                    align-items: center;
-                    gap: 10px;
-                }
-                .dates input {
-                    padding: 8px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                }
-                .zone-select {
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                    border: 1px solid #ddd;
-                    min-width: 150px;
-                    font-size: 1rem;
-                }
+
                 .dashboard-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 20px;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    gap: var(--space-lg);
                 }
+
                 .full-width {
                     grid-column: 1 / -1;
                 }
-                .kpi-card {
-                    text-align: center;
-                    padding: 25px;
-                }
-                .kpi-card .number {
-                    font-size: 2.5rem;
-                    font-weight: 800;
-                    color: #2c3e50;
-                    margin: 10px 0;
-                }
-                .kpi-card.warn .number {
-                    color: #e67e22;
-                }
-                .sub-text {
-                    color: #7f8c8d;
-                    font-size: 0.9rem;
-                }
-                .tags-container {
+
+                .btn-group {
                     display: flex;
-                    flex-wrap: wrap;
-                    gap: 10px;
-                    margin-top: 15px;
-                }
-                .tag {
-                    padding: 6px 12px;
-                    background: #eee;
-                    border-radius: 20px;
-                    font-size: 0.9rem;
-                }
-                .tag.warn {
-                    background: #fff3cd;
-                    color: #856404;
-                    border: 1px solid #ffeeba;
-                }
-                .tag.success {
-                    background: #d4edda;
-                    color: #155724;
-                    border: 1px solid #c3e6cb;
-                }
-                .zone-list {
-                    margin: 15px 0 0 0;
-                    padding-left: 25px;
-                }
-                .zone-list li {
-                    padding: 4px 0;
-                    font-size: 0.95rem;
-                    color: #333;
-                }
-                .leave-tag {
-                    display: flex;
-                    align-items: center;
                     gap: 8px;
-                    background: #f8f9fa;
-                    padding: 8px 12px;
-                    border-radius: 8px;
-                    border: 1px solid #eee;
+                    background: var(--gray-50);
+                    padding: 4px;
+                    border-radius: var(--radius-full);
+                    border: 1px solid var(--gray-100);
                 }
-                .leave-tag .name {
-                    font-weight: 600;
+
+                .btn-group button {
+                    background: transparent;
+                    color: var(--gray-600);
+                    border-radius: var(--radius-full);
+                    padding: 8px 20px;
+                    font-weight: 700;
+                    font-size: 0.85rem;
+                    box-shadow: none;
+                    border: none;
+                    cursor: pointer;
                 }
-                .leave-tag .reason {
-                    color: #e74c3c;
-                    font-style: italic;
+
+                .btn-group button.active {
+                    background: var(--accent);
+                    color: var(--white);
+                    box-shadow: var(--shadow-sm);
                 }
-                .zone-badge {
-                    font-size: 0.75rem;
-                    background: #e1ecf4;
-                    color: #39739d;
-                    padding: 2px 6px;
-                    border-radius: 4px;
+
+                .zone-select {
+                    background-color: var(--gray-50);
+                    border: 1px solid var(--gray-100);
+                    padding: 12px 24px;
+                    border-radius: var(--radius-full);
+                    font-weight: 700;
+                    font-size: 0.95rem;
                 }
+
+                .refresh-btn {
+                    background: var(--accent);
+                    color: var(--white);
+                    border-radius: var(--radius-full);
+                    padding: 12px 24px;
+                    font-weight: 700;
+                    border: none;
+                    cursor: pointer;
+                }
+
+                .wa-copy-btn {
+                    background: var(--primary);
+                    color: var(--accent);
+                    border-radius: var(--radius-full);
+                    padding: 10px 24px;
+                    font-weight: 800;
+                    box-shadow: var(--shadow-glow);
+                    border: none;
+                    cursor: pointer;
+                }
+
+                .whatsapp-preview {
+                    background: var(--gray-50);
+                    border: none;
+                    border-radius: var(--radius-lg);
+                    padding: 24px;
+                    font-size: 0.95rem;
+                    line-height: 1.6;
+                    color: var(--gray-700);
+                    font-family: inherit;
+                    white-space: pre-wrap;
+                }
+
+                .tag {
+                    padding: 8px 16px;
+                    border-radius: var(--radius-full);
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    background: var(--gray-100);
+                    color: var(--gray-700);
+                }
+
+                .tag.warn {
+                    background: #FEF2F2;
+                    color: var(--danger);
+                }
+
+                .btn-link {
+                    background: transparent;
+                    color: var(--primary-dark);
+                    box-shadow: none;
+                    padding: 4px 12px;
+                    font-weight: 800;
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    border: none;
+                    cursor: pointer;
+                }
+                .btn-link:hover {
+                    background: var(--primary-light);
+                    transform: none;
+                }
+
+                .badge {
+                    padding: 6px 12px;
+                    border-radius: var(--radius-full);
+                    font-size: 0.8rem;
+                    font-weight: 800;
+                }
+                .badge.good { background: #DCFCE7; color: #166534; }
+                .badge.bad { background: #FEF2F2; color: #991B1B; }
+
                 .table-responsive {
                     overflow-x: auto;
                     margin-top: 15px;
@@ -973,121 +858,62 @@ const Dashboard = () => {
                     border-collapse: collapse;
                 }
                 th, td {
-                    padding: 12px 15px;
+                    padding: 16px;
                     text-align: left;
-                    border-bottom: 1px solid #eee;
+                    border-bottom: 1px solid var(--gray-50);
                 }
                 th {
-                    font-weight: 600;
-                    color: #7f8c8d;
-                    font-size: 0.9rem;
+                    font-weight: 800;
+                    color: var(--gray-400);
+                    font-size: 0.7rem;
                     text-transform: uppercase;
-                    background: #fcfcfc;
+                    letter-spacing: 0.1em;
                 }
-                .warn-table th {
-                    color: #856404;
-                    background: #fff3cd;
-                }
-                .badge {
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-weight: bold;
-                    font-size: 0.85rem;
-                }
-                .badge.good {
-                    background: #d4edda;
-                    color: #155724;
-                }
-                .badge.bad {
-                    background: #f8d7da;
-                    color: #721c24;
-                }
-                .card-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .header-buttons {
-                    display: flex;
-                    gap: 15px;
-                }
-                .btn-link {
-                    background: none;
-                    border: none;
-                    color: #3498db;
-                    cursor: pointer;
-                    font-weight: 600;
-                }
+
                 .back-button {
-                  color: #667eea;
-                  font-size: 16px;
-                  font-weight: 600;
-                  background: transparent;
-                  border: 2px solid #667eea;
-                  padding: 8px 16px;
-                  border-radius: 6px;
-                  cursor: pointer;
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                  transition: all 0.2s ease;
+                    background: var(--gray-100);
+                    color: var(--accent);
+                    border-radius: var(--radius-full);
+                    padding: 8px 20px;
+                    font-weight: 700;
+                    box-shadow: none;
+                    border: none;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 }
                 .back-button:hover {
-                  background: #667eea;
-                  color: white;
+                    background: var(--gray-200);
+                    transform: translateX(-4px);
                 }
-                .back-button .icon {
-                    font-size: 20px;
-                }
-                .error-msg {
-                    background: #f8d7da;
-                    color: #721c24;
-                    padding: 15px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
-                }
-                .loading-spinner {
-                    text-align: center;
-                    padding: 40px;
-                    color: #666;
-                    font-size: 1.1rem;
-                }
-                .success-text { color: #27ae60; font-weight: bold; }
-                .warn-text { color: #f39c12; font-weight: bold; }
-                .error-text { color: #c0392b; font-weight: bold; }
-                .more-row {
-                    text-align: center;
-                    padding: 10px;
-                    color: #888;
-                    font-style: italic;
-                }
-                .refresh-btn {
-                    padding: 10px 20px;
-                    background: #27ae60;
-                    color: white;
+
+                .view-btn {
+                    background: var(--accent);
+                    color: var(--white);
+                    border-radius: var(--radius-full);
+                    padding: 6px 16px;
+                    font-weight: 700;
+                    font-size: 0.8rem;
                     border: none;
-                    border-radius: 6px;
                     cursor: pointer;
-                    font-weight: 600;
                 }
-                @media (max-width: 768px) {
-                    .dashboard-controls {
-                        flex-direction: column;
-                        align-items: stretch;
+
+                @media (max-width: 640px) {
+                    .dashboard-grid {
+                        grid-template-columns: 1fr;
                     }
-                    .control-group.right {
-                        margin-left: 0;
+                    .kpi-card {
+                        min-height: 150px;
                     }
-                    .dates {
-                        flex-direction: column;
-                    }
-                    .dates input {
-                        width: 100%;
+                    .kpi-card .number {
+                        font-size: 2.5rem;
                     }
                 }
             `}</style>
         </div>
     );
 };
+
 
 export default Dashboard;
