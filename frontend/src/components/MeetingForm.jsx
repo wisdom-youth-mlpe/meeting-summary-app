@@ -393,7 +393,12 @@ const MeetingForm = () => {
     setIsEditing(true);
     setEditingMeetingId(editData.meetingId || null);
 
-    const matchedZone = zones.find((zone) => zone.name === editData.zoneName);
+    const matchedZone = zones.find((zone) => 
+      zone.id === editData.zoneId || 
+      zone.zoneId === editData.zoneId || 
+      zone.name === editData.zoneName
+    );
+    
     if (matchedZone) {
       savedZoneRef.current = matchedZone.id;
       setSelectedZone(matchedZone.id);
@@ -456,29 +461,26 @@ const MeetingForm = () => {
   }, [zones]);
 
   useEffect(() => {
-    // Handle draft data restoration
-    if (
-      savedZoneRef.current === selectedZone &&
-      qhlsDraftRef.current &&
-      qhlsDraftRef.current.length
-    ) {
-      setQhlsData(qhlsDraftRef.current);
+    // Only rebuild if the zone actually changed OR if qhlsData needs units filled in
+    if (prevZoneRef.current !== selectedZone) {
+      // Zone changed or initialized - rebuild with merged draft/edit data if available
+      setQhlsData(buildQhlsRows(zoneUnits, qhlsDraftRef.current || []));
       qhlsDraftRef.current = null;
       prevZoneRef.current = selectedZone;
-      return;
-    }
+    } else if (zoneUnits.length > 0) {
+      // Check if we need to add missing units (e.g. after units load)
+      setQhlsData(prev => {
+        const isDefault = prev.length <= 1 && (!prev[0] || !prev[0].unit);
+        const presentUnits = new Set(prev.map(r => r.unit));
+        const hasMissingUnits = zoneUnits.some(u => !presentUnits.has(u));
 
-    // Only rebuild if the zone actually changed OR if qhlsData is currently empty/default and zoneUnits loaded
-    const isQhlsEmpty = qhlsData.length === 0 || (qhlsData.length === 1 && !qhlsData[0].unit);
-
-    if (prevZoneRef.current !== selectedZone) {
-      setQhlsData(buildQhlsRows(zoneUnits));
-      prevZoneRef.current = selectedZone;
-    } else if (isQhlsEmpty && zoneUnits.length > 0) {
-      // Zone units arrived late (e.g. after zones loaded)
-      setQhlsData(buildQhlsRows(zoneUnits));
+        if (isDefault || hasMissingUnits) {
+          return buildQhlsRows(zoneUnits, prev);
+        }
+        return prev;
+      });
     }
-  }, [selectedZone, zoneUnits, qhlsData]);
+  }, [selectedZone, zoneUnits]);
 
   const handleZoneChange = (zoneId) => {
     setSelectedZone(zoneId);
