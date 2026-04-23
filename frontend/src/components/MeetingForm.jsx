@@ -13,16 +13,34 @@ import html2canvas from 'html2canvas';
 
 const FORM_STORAGE_KEY = 'meetingFormDraft';
 const getTodayDate = () => new Date().toISOString().split('T')[0];
-const defaultQhlsRow = { unit: '', day: '', faculty: '', male: '', female: '' };
 
-const buildQhlsRows = (units = []) => {
-  if (Array.isArray(units) && units.length > 0) {
-    return units.map((unitName) => ({
-      ...defaultQhlsRow,
-      unit: unitName,
-    }));
+const buildQhlsRows = (units = [], existingData = []) => {
+  const defaultQhlsRow = { unit: '', day: '', faculty: '', male: '', female: '', hasQhls: true };
+  
+  if (!Array.isArray(units) || units.length === 0) {
+    if (Array.isArray(existingData) && existingData.length > 0) return existingData;
+    return [{ ...defaultQhlsRow }];
   }
-  return [{ ...defaultQhlsRow }];
+
+  const unitSet = new Set(units);
+  const rows = units.map((unitName) => {
+    const existing = Array.isArray(existingData)
+      ? existingData.find((row) => row.unit === unitName)
+      : null;
+    // Important: default hasQhls to true if not specified
+    return existing ? { ...existing } : { ...defaultQhlsRow, unit: unitName };
+  });
+
+  // Add existing rows that are not in the current units list (to avoid data loss)
+  if (Array.isArray(existingData)) {
+    existingData.forEach((row) => {
+      if (row.unit && !unitSet.has(row.unit)) {
+        rows.push({ ...row });
+      }
+    });
+  }
+
+  return rows;
 };
 
 const MeetingForm = () => {
@@ -422,11 +440,13 @@ const MeetingForm = () => {
     }
 
     if (Array.isArray(editData.qhls) && editData.qhls.length) {
-      qhlsDraftRef.current = editData.qhls;
-      setQhlsData(editData.qhls);
+      const mergedQhls = buildQhlsRows(matchedZone?.units || [], editData.qhls);
+      qhlsDraftRef.current = mergedQhls;
+      setQhlsData(mergedQhls);
     } else if (matchedZone) {
-      qhlsDraftRef.current = buildQhlsRows(matchedZone.units || []);
-      setQhlsData(buildQhlsRows(matchedZone.units || []));
+      const initialQhls = buildQhlsRows(matchedZone.units || []);
+      qhlsDraftRef.current = initialQhls;
+      setQhlsData(initialQhls);
     } else {
       qhlsDraftRef.current = null;
       setQhlsData(buildQhlsRows());
@@ -448,12 +468,17 @@ const MeetingForm = () => {
       return;
     }
 
-    // Only rebuild if the zone actually changed
+    // Only rebuild if the zone actually changed OR if qhlsData is currently empty/default and zoneUnits loaded
+    const isQhlsEmpty = qhlsData.length === 0 || (qhlsData.length === 1 && !qhlsData[0].unit);
+
     if (prevZoneRef.current !== selectedZone) {
       setQhlsData(buildQhlsRows(zoneUnits));
       prevZoneRef.current = selectedZone;
+    } else if (isQhlsEmpty && zoneUnits.length > 0) {
+      // Zone units arrived late (e.g. after zones loaded)
+      setQhlsData(buildQhlsRows(zoneUnits));
     }
-  }, [selectedZone, zoneUnits]);
+  }, [selectedZone, zoneUnits, qhlsData]);
 
   const handleZoneChange = (zoneId) => {
     setSelectedZone(zoneId);
