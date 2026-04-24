@@ -715,7 +715,12 @@ const Dashboard = () => {
                 )}
             </div>
             {dateFilter === 'week' && stats?.currentWeek && (
-                <h4 className="week-subtitle">Week {stats.currentWeek}</h4>
+                <h4 className="week-subtitle">
+                    Week {stats.currentWeek} 
+                    <span style={{ fontWeight: 'normal', marginLeft: '10px', color: '#666', fontSize: '0.9rem' }}>
+                        ({formatDate(startDate)} - {formatDate(endDate)})
+                    </span>
+                </h4>
             )}
             {dateFilter === 'month' && (
                 <h4 className="week-subtitle">
