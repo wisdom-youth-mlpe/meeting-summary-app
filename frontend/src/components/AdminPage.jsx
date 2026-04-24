@@ -22,6 +22,12 @@ const AdminPage = () => {
             description: 'Manage zones and geographic divisions.',
             icon: '🗺️',
             path: '/admin/zones'
+        },
+        {
+            title: 'Member Management',
+            description: 'Manage committee members and their roles.',
+            icon: '👥',
+            path: '/members'
         }
     ];
 
