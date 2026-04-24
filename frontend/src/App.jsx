@@ -113,6 +113,20 @@ const AuthenticatedLayout = ({ children }) => {
         {children}
       </div>
 
+      {/* Deployment Version - Hidden or subtle */}
+      <div style={{
+        position: 'fixed',
+        bottom: '80px',
+        right: '10px',
+        fontSize: '10px',
+        color: 'var(--gray-400)',
+        opacity: 0.5,
+        pointerEvents: 'none',
+        zIndex: 1000
+      }}>
+        v1.0.1 - 2026.04.24.2
+      </div>
+
       {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
