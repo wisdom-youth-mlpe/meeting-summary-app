@@ -15,27 +15,45 @@ const FORM_STORAGE_KEY = 'meetingFormDraft';
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
 const buildQhlsRows = (units = [], existingData = []) => {
-  const defaultQhlsRow = { unit: '', day: '', faculty: '', male: '', female: '', hasQhls: true };
+  const defaultQhlsRow = { 
+    unit: '', 
+    day: '', 
+    faculty: '', 
+    facultyMobile: '', 
+    syllabus: '', 
+    location: '', 
+    afterRamadhan: '', 
+    male: '', 
+    female: '', 
+    hasQhls: true 
+  };
   
+  // If no units provided, return existing data or a single default row
   if (!Array.isArray(units) || units.length === 0) {
-    if (Array.isArray(existingData) && existingData.length > 0) return existingData;
+    if (Array.isArray(existingData) && existingData.length > 0) {
+      return existingData.map(row => ({ ...defaultQhlsRow, ...row }));
+    }
     return [{ ...defaultQhlsRow }];
   }
 
-  const unitSet = new Set(units);
+  const unitSet = new Set(units.map(u => u.trim()));
+  
+  // Create rows for all units in the zone
   const rows = units.map((unitName) => {
     const existing = Array.isArray(existingData)
       ? existingData.find((row) => row.unit === unitName)
       : null;
-    // Important: default hasQhls to true if not specified
-    return existing ? { ...existing } : { ...defaultQhlsRow, unit: unitName };
+    // Important: Keep existing data, or create a new row for the unit
+    return existing 
+      ? { ...defaultQhlsRow, ...existing, unit: unitName } 
+      : { ...defaultQhlsRow, unit: unitName };
   });
 
-  // Add existing rows that are not in the current units list (to avoid data loss)
+  // Add any rows from existingData that are NOT in the current zone units list (to prevent data loss)
   if (Array.isArray(existingData)) {
     existingData.forEach((row) => {
-      if (row.unit && !unitSet.has(row.unit)) {
-        rows.push({ ...row });
+      if (row.unit && !unitSet.has(row.unit.trim())) {
+        rows.push({ ...defaultQhlsRow, ...row });
       }
     });
   }
@@ -461,20 +479,21 @@ const MeetingForm = () => {
   }, [zones]);
 
   useEffect(() => {
-    // Only rebuild if the zone actually changed OR if qhlsData needs units filled in
+    // Rebuild qhlsData whenever selectedZone or zoneUnits change
+    // This ensures that when editing, once units for the zone are loaded, we merge them with existing qhls data
     if (prevZoneRef.current !== selectedZone) {
       // Zone changed or initialized - rebuild with merged draft/edit data if available
-      setQhlsData(buildQhlsRows(zoneUnits, qhlsDraftRef.current || []));
+      const merged = buildQhlsRows(zoneUnits, qhlsDraftRef.current || qhlsData || []);
+      setQhlsData(merged);
       qhlsDraftRef.current = null;
       prevZoneRef.current = selectedZone;
     } else if (zoneUnits.length > 0) {
-      // Check if we need to add missing units (e.g. after units load)
+      // Check if we need to add missing units (e.g. after units load from API)
       setQhlsData(prev => {
-        const isDefault = prev.length <= 1 && (!prev[0] || !prev[0].unit);
-        const presentUnits = new Set(prev.map(r => r.unit));
+        const presentUnits = new Set(prev.map(r => r.unit).filter(Boolean));
         const hasMissingUnits = zoneUnits.some(u => !presentUnits.has(u));
 
-        if (isDefault || hasMissingUnits) {
+        if (hasMissingUnits) {
           return buildQhlsRows(zoneUnits, prev);
         }
         return prev;
@@ -664,11 +683,11 @@ const MeetingForm = () => {
         // Parse data
         const rows = lines.map(line => line.split(',').map(cell => cell.trim()));
 
-        // Calculate column widths
-        const colWidths = [0, 0, 0, 0, 0];
+        // Calculate column widths for 9 columns
+        const colWidths = [0, 0, 0, 0, 0, 0, 0, 0, 0];
         rows.forEach(row => {
           row.forEach((cell, i) => {
-            if (i < 5 && cell.length > colWidths[i]) {
+            if (i < 9 && cell.length > colWidths[i]) {
               colWidths[i] = cell.length;
             }
           });
@@ -1197,7 +1216,7 @@ const MeetingForm = () => {
 
   return (
     <div className="container">
-      <h1>മീറ്റിംഗ് റിപ്പോർട്ട്</h1>
+      <h1>{isEditing ? 'റിപ്പോർട്ട് എഡിറ്റ് ചെയ്യുക' : 'മീറ്റിംഗ് റിപ്പോർട്ട്'}</h1>
 
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
@@ -1287,13 +1306,6 @@ const MeetingForm = () => {
               id="swagatham"
               value={swagatham}
               onChange={(e) => setSwagatham(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '8px',
-                border: '2px solid #e0e0e0',
-                fontSize: '1rem',
-              }}
             >
               <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
               {attendees.map((attendee, index) => (
@@ -1310,13 +1322,6 @@ const MeetingForm = () => {
               id="adhyakshan"
               value={adhyakshan}
               onChange={(e) => setAdhyakshan(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '8px',
-                border: '2px solid #e0e0e0',
-                fontSize: '1rem',
-              }}
             >
               <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
               {attendees.map((attendee, index) => (
@@ -1333,13 +1338,6 @@ const MeetingForm = () => {
               id="nandhi"
               value={nandhi}
               onChange={(e) => setNandhi(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '8px',
-                border: '2px solid #e0e0e0',
-                fontSize: '1rem',
-              }}
             >
               <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
               {attendees.map((attendee, index) => (
@@ -1354,7 +1352,7 @@ const MeetingForm = () => {
         <div className="submit-section">
           <button
             type="submit"
-            className="submit-button btn-success"
+            className="submit-button"
             disabled={submitting || !selectedZone}
           >
             {submitting

@@ -12,6 +12,10 @@ const QHLSSchema = new mongoose.Schema({
   hasQhls: { type: Boolean, default: true },
   day: { type: String, default: '' },
   faculty: { type: String, default: '' },
+  facultyMobile: { type: String, default: '' },
+  syllabus: { type: String, default: '' },
+  location: { type: String, default: '' },
+  afterRamadhan: { type: String, default: '' },
   male: { type: Number, default: 0 },
   female: { type: Number, default: 0 },
 }, { _id: false });
