@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'Meeting Summary App',
-        short_name: 'MeetingSum',
+        name: 'Wisdom MLP E Meetings',
+        short_name: 'Wisdom Meetings',
         description: 'Professional Meeting Summary and Reporting Application',
         theme_color: '#3498db',
         icons: [
