@@ -28,6 +28,17 @@ const canCreateMeeting = (req, res, next) => {
   });
 };
 
+const isAdmin = (req, res, next) => {
+  if (req.user && req.user.roles && req.user.roles.includes('admin')) {
+    return next();
+  }
+  return res.status(403).json({
+    success: false,
+    error: 'Access denied',
+    message: 'Admin access required'
+  });
+};
+
 // Middleware to check if user can edit/delete a specific meeting
 const canEditMeeting = async (req, res, next) => {
   try {
@@ -330,12 +341,15 @@ router.get('/meetings/list', async (req, res) => {
     }
 
     console.log('[API] Fetching meetings from MongoDB');
-    let meetings = await mongoService.getAllMeetings();
     
-    // Filter meetings based on user role and access
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 0; // 0 means all for backward compatibility if needed, but we should set a default
+    
+    // Build filter based on user role and access
     const user = req.user;
+    const filter = {};
     
-    // Admin sees all meetings
+    // Admin sees all meetings, others are filtered
     if (!user.roles || !user.roles.includes('admin')) {
       const allZones = await mongoService.getZones();
       
@@ -346,27 +360,27 @@ router.get('/meetings/list', async (req, res) => {
         const districtZones = allZones
           .filter(z => districtsList.includes(z.districtId))
           .map(z => z.name);
-        meetings = meetings.filter(m => districtZones.includes(m.zoneName));
+        filter.zoneName = { $in: districtZones };
       }
       // District admin - filter by district access
       else if (user.roles && user.roles.includes('district_admin')) {
         const districtZones = allZones
           .filter(z => user.districtAccess && user.districtAccess.includes(z.districtId))
           .map(z => z.name);
-        
-        meetings = meetings.filter(m => districtZones.includes(m.zoneName));
+        filter.zoneName = { $in: districtZones };
       }
       // Zone admin - filter by zone access
       else if (user.roles && user.roles.includes('zone_admin')) {
         const accessibleZoneNames = allZones
           .filter(z => user.zoneAccess && user.zoneAccess.includes(z.id))
           .map(z => z.name);
-        
-        meetings = meetings.filter(m => accessibleZoneNames.includes(m.zoneName));
+        filter.zoneName = { $in: accessibleZoneNames };
       }
     }
     
-    res.json({ success: true, meetings });
+    const { meetings, pagination } = await mongoService.getAllMeetings(filter, page, limit);
+    
+    res.json({ success: true, meetings, pagination });
   } catch (error) {
     console.error('Error in /api/meetings/list:', error);
     res.status(500).json({
@@ -1200,6 +1214,36 @@ router.get('/qhls/missing/:offset', async (req, res) => {
       error: 'Failed to fetch missing units',
       message: error.message,
     });
+  }
+});
+
+/**
+ * GET /api/settings/:key
+ * Fetch a setting by key
+ */
+router.get('/settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const value = await mongoService.getSetting(key);
+    res.json({ success: true, value });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/settings
+ * Update a setting (Admin only)
+ */
+router.post('/settings', isAdmin, async (req, res) => {
+  try {
+    const { key, value, description } = req.body;
+    if (!key) return res.status(400).json({ success: false, error: 'Key is required' });
+    
+    await mongoService.updateSetting(key, value, description);
+    res.json({ success: true, message: 'Setting updated' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

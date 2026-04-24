@@ -46,19 +46,19 @@ const Login = () => {
 
   return (
     <div className="login-wrapper">
-      <div className="login-card">
+      <div className="container login-container">
         <div className="login-header">
-          <h1>QHLS</h1>
-          <p>Login to your account</p>
+          <h1>Wisdom MLP E Meetings</h1>
+          <p>ലോഗിൻ ചെയ്യുക</p>
         </div>
 
         {error && (
-          <div className="error-banner">
+          <div className="error">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
@@ -86,11 +86,12 @@ const Login = () => {
             />
           </div>
 
-          <div className="submit-section" style={{ marginTop: '32px' }}>
+          <div className="submit-section">
             <button
               type="submit"
-              className="login-btn"
+              className="submit-button"
               disabled={loading}
+              style={{ width: '100%' }}
             >
               {loading ? 'Logging in...' : 'Sign In'}
             </button>
@@ -104,80 +105,58 @@ const Login = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #F8F9FB;
-          padding: 24px;
+          background: var(--gray-100);
+          padding: var(--space-md);
         }
 
-        .login-card {
-          width: 100%;
-          max-width: 440px;
-          background: #ffffff;
-          padding: 48px 40px;
-          border-radius: 40px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
-          border: 1px solid rgba(0, 0, 0, 0.02);
+        .login-container {
+          max-width: 440px !important;
+          margin: 0 !important;
+          box-shadow: var(--shadow-lg);
+          border: 1px solid var(--gray-200);
+          padding: var(--space-2xl) var(--space-xl) !important;
         }
 
         .login-header {
           text-align: center;
-          margin-bottom: 40px;
+          margin-bottom: var(--space-xl);
         }
 
         .login-header h1 {
-          font-size: 3rem;
-          font-weight: 900;
-          color: #111111;
-          margin-bottom: 8px;
-          letter-spacing: -0.05em;
-          line-height: 1;
+          font-size: 2.5rem;
+          color: var(--primary);
+          margin-bottom: var(--space-xs);
+          padding-bottom: 0;
+          text-align: center;
         }
 
         .login-header p {
-          color: #94A3B8;
-          font-weight: 600;
+          color: var(--gray-500);
+          font-weight: 500;
           font-size: 0.95rem;
         }
 
-        .error-banner {
-          background: #FEF2F2;
-          color: #EF4444;
-          padding: 16px;
-          border-radius: 20px;
-          margin-bottom: 24px;
-          font-weight: 700;
-          font-size: 0.85rem;
-          text-align: center;
-          border: 1px solid rgba(239, 68, 68, 0.1);
-        }
-
-        .login-btn {
-          width: 100%;
-          padding: 18px;
-          background: #111111;
-          color: #A3E635;
+        .login-form .form-group {
+          background: transparent;
+          padding: 0;
           border: none;
-          border-radius: 9999px;
-          font-size: 1rem;
-          font-weight: 800;
-          cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          margin-bottom: var(--space-lg);
         }
 
-        .login-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-          filter: brightness(1.2);
+        .login-form .submit-section {
+          margin-top: var(--space-xl);
+          padding-top: 0;
+          border-top: none;
         }
 
-        .login-btn:disabled {
-          background: #E2E8F0;
-          color: #94A3B8;
-          cursor: not-allowed;
-          box-shadow: none;
-          transform: none;
+        @media (max-width: 640px) {
+          .login-container {
+            padding: var(--space-xl) var(--space-md) !important;
+          }
+          
+          .login-header h1 {
+            font-size: 2rem;
+          }
         }
       `}</style>
     </div>

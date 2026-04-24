@@ -13,6 +13,8 @@ const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const UserManagement = React.lazy(() => import('./components/UserManagement'));
 const QHLSDashboard = React.lazy(() => import('./components/QHLSDashboard'));
 const MemberManagement = React.lazy(() => import('./components/MemberManagement'));
+const AdminPage = React.lazy(() => import('./components/AdminPage'));
+const MeetingDayConfig = React.lazy(() => import('./components/MeetingDayConfig'));
 
 // Layout component for authenticated pages
 const AuthenticatedLayout = ({ children }) => {
@@ -171,7 +173,27 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <AuthenticatedLayout>
+                <AdminPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AuthenticatedLayout>
                 <UserManagement />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/meeting-day"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AuthenticatedLayout>
+                <MeetingDayConfig />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

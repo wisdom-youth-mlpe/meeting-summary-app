@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDashboardStats, getZones, getMeetingReport } from '../services/api';
+import { getDashboardStats, getZones, getMeetingReport, getSetting } from '../services/api';
 import { getUser, hasRole } from '../services/auth';
 import AttendanceSummary from './AttendanceSummary';
 
@@ -21,11 +21,27 @@ const Dashboard = () => {
     const [selectedReport, setSelectedReport] = useState(null);
     const [selectedMeetingData, setSelectedMeetingData] = useState(null);
     const [reportLoading, setReportLoading] = useState(false);
+    const [meetingDay, setMeetingDay] = useState(3); // Default to Wednesday
 
     useEffect(() => {
         loadZones();
-        initializeDates('week');
+        fetchMeetingDay();
     }, []);
+
+    const fetchMeetingDay = async () => {
+        try {
+            const response = await getSetting('district_meeting_day');
+            if (response.success && response.value !== null) {
+                setMeetingDay(parseInt(response.value));
+                initializeDates('week', parseInt(response.value));
+            } else {
+                initializeDates('week', 3); // Fallback to Wednesday
+            }
+        } catch (e) {
+            console.error("Failed to fetch meeting day setting", e);
+            initializeDates('week', 3);
+        }
+    };
 
     useEffect(() => {
         if (startDate && endDate) {
@@ -56,18 +72,20 @@ const Dashboard = () => {
         }
     };
 
-    const initializeDates = (filterType) => {
+    const initializeDates = (filterType, targetDay = null) => {
         const today = new Date();
         let start = new Date();
         let end = new Date();
+        
+        const currentTargetDay = targetDay !== null ? targetDay : meetingDay;
 
         if (filterType === 'week') {
-            // Week runs Wednesday → Tuesday
+            // Week runs from configured day to configured day - 1
             // day: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
             const day = today.getDay();
-            // days since last Wednesday: Wed=0,Thu=1,Fri=2,Sat=3,Sun=4,Mon=5,Tue=6
-            const daysSinceWed = (day + 4) % 7;
-            start.setDate(today.getDate() - daysSinceWed);
+            // days since last target day
+            const diff = (day - currentTargetDay + 7) % 7;
+            start.setDate(today.getDate() - diff);
         } else if (filterType === 'month') {
             start.setDate(1); // 1st of month
         } else if (filterType === 'custom') {
