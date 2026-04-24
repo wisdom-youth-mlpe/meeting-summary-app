@@ -489,6 +489,38 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     </div>
   );
 
+  const CollapsibleSection = ({ title, children, defaultExpanded = true }) => {
+    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    return (
+      <div className="report-section" style={{ marginBottom: '16px' }}>
+        <div 
+          onClick={() => setIsExpanded(!isExpanded)} 
+          style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            cursor: 'pointer',
+            padding: '4px 0'
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: '1.1rem' }}>{title}</h2>
+          <span style={{ 
+            fontSize: '1.2rem', 
+            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease'
+          }}>
+            ▼
+          </span>
+        </div>
+        {isExpanded && (
+          <div style={{ marginTop: '12px', animation: 'fadeIn 0.3s ease' }}>
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container" style={{ paddingBottom: '30px' }}>
       <div style={{ marginBottom: '24px', textAlign: 'center' }}>
@@ -666,8 +698,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
           </div>
 
           <div className="report-container">
-            <div className="report-section">
-              <h2>മീറ്റിംഗ് വിവരങ്ങൾ (Meeting Details)</h2>
+            <CollapsibleSection title="മീറ്റിംഗ് വിവരങ്ങൾ (Meeting Details)">
               <p><strong>മണ്ഡലം (Zone):</strong> {selectedMeetingData.zoneName}</p>
               <p><strong>തീയതി (Date):</strong> {selectedMeetingData.date}</p>
               {selectedMeetingData.startTime && (
@@ -676,37 +707,38 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
               {selectedMeetingData.endTime && (
                 <p><strong>അവസാനിച്ച സമയം (End Time):</strong> {formatTime12h(selectedMeetingData.endTime)}</p>
               )}
-            </div>
+            </CollapsibleSection>
 
-            <div className="report-section">
-              <h2>പങ്കെടുത്തവർ:</h2>
+            <CollapsibleSection title="പങ്കെടുത്തവർ (Attendees)">
               <pre className="report-content">{selectedReport.attendees || 'ആരുമില്ല'}</pre>
-            </div>
+            </CollapsibleSection>
 
-            <div className="report-section">
-              <h2>ലീവ് ആയവർ:</h2>
+            <CollapsibleSection title="ലീവ് ആയവർ (Leave)">
               <pre className="report-content">{selectedReport.leaveAayavar || 'ആരുമില്ല'}</pre>
-            </div>
+            </CollapsibleSection>
 
-            <div className="report-section">
-              <h2>അജണ്ടകൾ:</h2>
+            <CollapsibleSection title="അജണ്ടകൾ (Agendas)">
               <pre className="report-content">{selectedReport.agenda || 'അജണ്ടകളില്ല'}</pre>
-            </div>
+            </CollapsibleSection>
 
-            <div className="report-section">
-              <h2>തീരുമാനങ്ങൾ:</h2>
+            <CollapsibleSection title="തീരുമാനങ്ങൾ (Minutes)">
               <pre className="report-content">{selectedReport.minutes || 'തീരുമാനങ്ങളില്ല'}</pre>
-            </div>
+            </CollapsibleSection>
 
             {selectedReport.qhlsStatus && selectedReport.qhlsStatus.trim() && (
-              <div className="report-section">
-                <h2>QHLS Status:</h2>
+              <CollapsibleSection title="QHLS Status">
                 <pre className="report-content">{selectedReport.qhlsStatus}</pre>
-              </div>
+              </CollapsibleSection>
             )}
           </div>
         </div>
       )}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };
