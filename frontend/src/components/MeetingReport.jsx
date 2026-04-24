@@ -97,7 +97,7 @@ const MeetingReport = () => {
       const districts = isDistrictAdmin ? user.districtAccess?.join(',') : null;
 
       const limit = 20;
-      const response = await getAllMeetings(districts, pageNum, limit);
+      const response = await getAllMeetings(districts, pageNum, limit, searchTerm, filterDate);
       
       if (response.success) {
         const newMeetings = response.meetings || [];
@@ -132,6 +132,21 @@ const MeetingReport = () => {
       fetchMeetings(page + 1, true);
     }
   };
+
+  // Trigger search on term/date change with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (page === 1) {
+        fetchMeetings(1);
+      } else {
+        setPage(1);
+        setMeetings([]);
+        fetchMeetings(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, filterDate]);
 
   const handleView = async (meetingId) => {
     try {

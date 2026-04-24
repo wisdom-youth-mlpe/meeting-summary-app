@@ -66,9 +66,11 @@ export const getMeetingReport = async (meetingId) => {
   return response.data;
 };
 
-export const getAllMeetings = async (districts = null, page = 1, limit = 20) => {
+export const getAllMeetings = async (districts = null, page = 1, limit = 20, search = '', date = '') => {
   const params = { page, limit };
   if (districts) params.districts = districts;
+  if (search) params.search = search;
+  if (date) params.date = date;
   const response = await api.get('/api/meetings/list', { params });
   return response.data;
 };

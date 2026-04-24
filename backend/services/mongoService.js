@@ -266,8 +266,18 @@ class MongoService {
     };
   }
 
-  async getAllMeetings(filter = {}, page = 1, limit = 0) {
-    const query = Meeting.find(filter).sort({ date: -1, createdAt: -1 });
+  async getAllMeetings(filter = {}, page = 1, limit = 0, search = '', date = '') {
+    const finalFilter = { ...filter };
+    
+    if (search) {
+      finalFilter.zoneName = { $regex: search, $options: 'i' };
+    }
+    
+    if (date) {
+      finalFilter.date = date;
+    }
+
+    const query = Meeting.find(finalFilter).sort({ date: -1, createdAt: -1 });
     
     if (limit > 0) {
       query.skip((page - 1) * limit).limit(limit);
@@ -275,7 +285,7 @@ class MongoService {
     
     const [meetings, total] = await Promise.all([
       query,
-      Meeting.countDocuments(filter)
+      Meeting.countDocuments(finalFilter)
     ]);
 
     return {

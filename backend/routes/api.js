@@ -343,7 +343,9 @@ router.get('/meetings/list', async (req, res) => {
     console.log('[API] Fetching meetings from MongoDB');
     
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 0; // 0 means all for backward compatibility if needed, but we should set a default
+    const limit = parseInt(req.query.limit) || 0;
+    const search = req.query.search || '';
+    const date = req.query.date || '';
     
     // Build filter based on user role and access
     const user = req.user;
@@ -378,7 +380,7 @@ router.get('/meetings/list', async (req, res) => {
       }
     }
     
-    const { meetings, pagination } = await mongoService.getAllMeetings(filter, page, limit);
+    const { meetings, pagination } = await mongoService.getAllMeetings(filter, page, limit, search, date);
     
     res.json({ success: true, meetings, pagination });
   } catch (error) {
