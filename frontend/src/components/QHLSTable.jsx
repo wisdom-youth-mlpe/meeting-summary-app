@@ -24,6 +24,10 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
     if (field === 'hasQhls' && !value) {
       updatedData[index].day = '';
       updatedData[index].faculty = '';
+      updatedData[index].facultyMobile = '';
+      updatedData[index].syllabus = '';
+      updatedData[index].location = '';
+      updatedData[index].afterRamadhan = '';
       updatedData[index].male = '';
       updatedData[index].female = '';
     }
@@ -42,26 +46,26 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
     table: {
       width: '100%',
       borderCollapse: 'collapse',
-      minWidth: '600px',
+      minWidth: '1000px',
     },
     th: {
-      padding: '16px 12px',
+      padding: '12px 10px',
       textAlign: 'left',
       background: 'var(--gray-50)',
-      color: 'var(--gray-500)',
-      fontWeight: '700',
-      fontSize: '0.75rem',
+      color: 'var(--gray-600)',
+      fontWeight: '600',
+      fontSize: '0.8rem',
       textTransform: 'uppercase',
-      letterSpacing: '0.05em',
-      borderBottom: '1px solid var(--gray-100)',
+      letterSpacing: '0.02em',
+      borderBottom: '1px solid var(--gray-200)',
     },
     td: {
-      padding: '12px 8px',
+      padding: '8px 6px',
       borderBottom: '1px solid var(--gray-50)',
     },
     input: {
       width: '100%',
-      padding: '10px 12px',
+      padding: '8px 10px',
       border: '1px solid var(--gray-200)',
       borderRadius: 'var(--radius-md)',
       fontSize: '0.9rem',
@@ -80,31 +84,31 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
       width: '70px',
     },
     mobileCard: {
-      padding: '24px',
-      marginBottom: '16px',
+      padding: '16px',
+      marginBottom: '12px',
       background: 'var(--white)',
       borderRadius: 'var(--radius-lg)',
       border: '1px solid var(--gray-100)',
       boxShadow: 'var(--shadow-sm)',
     },
     mobileLabel: {
-      fontSize: '0.7rem',
-      color: 'var(--gray-400)',
-      marginBottom: '6px',
-      fontWeight: '800',
+      fontSize: '0.75rem',
+      color: 'var(--gray-500)',
+      marginBottom: '4px',
+      fontWeight: '600',
       textTransform: 'uppercase',
-      letterSpacing: '0.05em',
+      letterSpacing: '0.02em',
     },
     mobileValue: {
       fontSize: '1rem',
-      color: 'var(--accent)',
-      fontWeight: '800',
-      marginBottom: '16px',
+      color: 'var(--gray-900)',
+      fontWeight: '700',
+      marginBottom: '12px',
     },
     mobileInputGroup: {
       display: 'grid',
       gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '16px',
+      gap: '10px',
     },
     mobileInputWrapper: {
       display: 'flex',
@@ -164,6 +168,51 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
                   />
                 </div>
                 <div style={styles.mobileInputWrapper}>
+                  <label style={styles.mobileLabel}>മൊബൈൽ</label>
+                  <input
+                    key={`mobile-${index}-${row.facultyMobile}`}
+                    type="tel"
+                    defaultValue={row.facultyMobile || ''}
+                    onBlur={(e) => handleFieldChange(index, 'facultyMobile', e.target.value)}
+                    placeholder="മൊബൈൽ"
+                    style={styles.input}
+                  />
+                </div>
+                <div style={styles.mobileInputWrapper}>
+                  <label style={styles.mobileLabel}>സിലബസ്</label>
+                  <input
+                    key={`syllabus-${index}-${row.syllabus}`}
+                    type="text"
+                    defaultValue={row.syllabus || ''}
+                    onBlur={(e) => handleFieldChange(index, 'syllabus', e.target.value)}
+                    placeholder="സിലബസ്"
+                    style={styles.input}
+                  />
+                </div>
+                <div style={styles.mobileInputWrapper}>
+                  <label style={styles.mobileLabel}>സ്ഥലം</label>
+                  <input
+                    key={`location-${index}-${row.location}`}
+                    type="text"
+                    defaultValue={row.location || ''}
+                    onBlur={(e) => handleFieldChange(index, 'location', e.target.value)}
+                    placeholder="സ്ഥലം"
+                    style={styles.input}
+                  />
+                </div>
+                <div style={styles.mobileInputWrapper}>
+                  <label style={styles.mobileLabel}>റമദാനിന് ശേഷം?</label>
+                  <select
+                    value={row.afterRamadhan || ''}
+                    onChange={(e) => handleFieldChange(index, 'afterRamadhan', e.target.value)}
+                    style={styles.input}
+                  >
+                    <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
+                    <option value="yes">ഉണ്ട്</option>
+                    <option value="no">ഇല്ല</option>
+                  </select>
+                </div>
+                <div style={styles.mobileInputWrapper}>
                   <label style={styles.mobileLabel}>പുരുഷന്മാർ</label>
                   <input
                     key={`male-${index}-${row.male}`}
@@ -217,6 +266,10 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
             <th style={{ ...styles.th, textAlign: 'center' }}>QHLS</th>
             <th style={styles.th}>ദിവസം</th>
             <th style={styles.th}>ഫാക്കൽറ്റി</th>
+            <th style={styles.th}>മൊബൈൽ</th>
+            <th style={styles.th}>സിലബസ്</th>
+            <th style={styles.th}>സ്ഥലം</th>
+            <th style={styles.th}>റമദാനിന് ശേഷം</th>
             <th style={styles.th}>പുരുഷന്മാർ</th>
             <th style={styles.th}>സ്ത്രീകൾ</th>
           </tr>
@@ -272,6 +325,63 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
                       ...(hasQhls ? {} : styles.inputDisabled),
                     }}
                   />
+                </td>
+                <td style={styles.td}>
+                  <input
+                    key={`mobile-desktop-${index}-${row.facultyMobile}`}
+                    type="tel"
+                    defaultValue={row.facultyMobile || ''}
+                    onBlur={(e) => handleFieldChange(index, 'facultyMobile', e.target.value)}
+                    placeholder="മൊബൈൽ"
+                    disabled={!hasQhls}
+                    style={{
+                      ...styles.input,
+                      ...(hasQhls ? {} : styles.inputDisabled),
+                    }}
+                  />
+                </td>
+                <td style={styles.td}>
+                  <input
+                    key={`syllabus-desktop-${index}-${row.syllabus}`}
+                    type="text"
+                    defaultValue={row.syllabus || ''}
+                    onBlur={(e) => handleFieldChange(index, 'syllabus', e.target.value)}
+                    placeholder="സിലബസ്"
+                    disabled={!hasQhls}
+                    style={{
+                      ...styles.input,
+                      ...(hasQhls ? {} : styles.inputDisabled),
+                    }}
+                  />
+                </td>
+                <td style={styles.td}>
+                  <input
+                    key={`location-desktop-${index}-${row.location}`}
+                    type="text"
+                    defaultValue={row.location || ''}
+                    onBlur={(e) => handleFieldChange(index, 'location', e.target.value)}
+                    placeholder="സ്ഥലം"
+                    disabled={!hasQhls}
+                    style={{
+                      ...styles.input,
+                      ...(hasQhls ? {} : styles.inputDisabled),
+                    }}
+                  />
+                </td>
+                <td style={styles.td}>
+                  <select
+                    value={row.afterRamadhan || ''}
+                    onChange={(e) => handleFieldChange(index, 'afterRamadhan', e.target.value)}
+                    disabled={!hasQhls}
+                    style={{
+                      ...styles.input,
+                      ...(hasQhls ? {} : styles.inputDisabled),
+                    }}
+                  >
+                    <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
+                    <option value="yes">ഉണ്ട്</option>
+                    <option value="no">ഇല്ല</option>
+                  </select>
                 </td>
                 <td style={styles.td}>
                   <input

@@ -15,27 +15,45 @@ const FORM_STORAGE_KEY = 'meetingFormDraft';
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
 const buildQhlsRows = (units = [], existingData = []) => {
-  const defaultQhlsRow = { unit: '', day: '', faculty: '', male: '', female: '', hasQhls: true };
+  const defaultQhlsRow = { 
+    unit: '', 
+    day: '', 
+    faculty: '', 
+    facultyMobile: '', 
+    syllabus: '', 
+    location: '', 
+    afterRamadhan: '', 
+    male: '', 
+    female: '', 
+    hasQhls: true 
+  };
   
+  // If no units provided, return existing data or a single default row
   if (!Array.isArray(units) || units.length === 0) {
-    if (Array.isArray(existingData) && existingData.length > 0) return existingData;
+    if (Array.isArray(existingData) && existingData.length > 0) {
+      return existingData.map(row => ({ ...defaultQhlsRow, ...row }));
+    }
     return [{ ...defaultQhlsRow }];
   }
 
-  const unitSet = new Set(units);
+  const unitSet = new Set(units.map(u => u.trim()));
+  
+  // Create rows for all units in the zone
   const rows = units.map((unitName) => {
     const existing = Array.isArray(existingData)
       ? existingData.find((row) => row.unit === unitName)
       : null;
-    // Important: default hasQhls to true if not specified
-    return existing ? { ...existing } : { ...defaultQhlsRow, unit: unitName };
+    // Important: Keep existing data, or create a new row for the unit
+    return existing 
+      ? { ...defaultQhlsRow, ...existing, unit: unitName } 
+      : { ...defaultQhlsRow, unit: unitName };
   });
 
-  // Add existing rows that are not in the current units list (to avoid data loss)
+  // Add any rows from existingData that are NOT in the current zone units list (to prevent data loss)
   if (Array.isArray(existingData)) {
     existingData.forEach((row) => {
-      if (row.unit && !unitSet.has(row.unit)) {
-        rows.push({ ...row });
+      if (row.unit && !unitSet.has(row.unit.trim())) {
+        rows.push({ ...defaultQhlsRow, ...row });
       }
     });
   }
@@ -461,20 +479,21 @@ const MeetingForm = () => {
   }, [zones]);
 
   useEffect(() => {
-    // Only rebuild if the zone actually changed OR if qhlsData needs units filled in
+    // Rebuild qhlsData whenever selectedZone or zoneUnits change
+    // This ensures that when editing, once units for the zone are loaded, we merge them with existing qhls data
     if (prevZoneRef.current !== selectedZone) {
       // Zone changed or initialized - rebuild with merged draft/edit data if available
-      setQhlsData(buildQhlsRows(zoneUnits, qhlsDraftRef.current || []));
+      const merged = buildQhlsRows(zoneUnits, qhlsDraftRef.current || qhlsData || []);
+      setQhlsData(merged);
       qhlsDraftRef.current = null;
       prevZoneRef.current = selectedZone;
     } else if (zoneUnits.length > 0) {
-      // Check if we need to add missing units (e.g. after units load)
+      // Check if we need to add missing units (e.g. after units load from API)
       setQhlsData(prev => {
-        const isDefault = prev.length <= 1 && (!prev[0] || !prev[0].unit);
-        const presentUnits = new Set(prev.map(r => r.unit));
+        const presentUnits = new Set(prev.map(r => r.unit).filter(Boolean));
         const hasMissingUnits = zoneUnits.some(u => !presentUnits.has(u));
 
-        if (isDefault || hasMissingUnits) {
+        if (hasMissingUnits) {
           return buildQhlsRows(zoneUnits, prev);
         }
         return prev;
@@ -664,11 +683,11 @@ const MeetingForm = () => {
         // Parse data
         const rows = lines.map(line => line.split(',').map(cell => cell.trim()));
 
-        // Calculate column widths
-        const colWidths = [0, 0, 0, 0, 0];
+        // Calculate column widths for 9 columns
+        const colWidths = [0, 0, 0, 0, 0, 0, 0, 0, 0];
         rows.forEach(row => {
           row.forEach((cell, i) => {
-            if (i < 5 && cell.length > colWidths[i]) {
+            if (i < 9 && cell.length > colWidths[i]) {
               colWidths[i] = cell.length;
             }
           });
@@ -1426,8 +1445,7 @@ const MeetingForm = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1435,21 +1453,18 @@ const MeetingForm = () => {
           zIndex: 9999,
         }}>
           <div style={{
-            width: '64px',
-            height: '64px',
-            border: '4px solid rgba(163, 230, 53, 0.1)',
-            borderTop: '4px solid var(--primary)',
+            width: '60px',
+            height: '60px',
+            border: '5px solid #f3f3f3',
+            borderTop: '5px solid #3498db',
             borderRadius: '50%',
-            animation: 'spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite',
-            boxShadow: '0 0 20px rgba(163, 230, 53, 0.2)',
+            animation: 'spin 1s linear infinite',
           }}></div>
           <p style={{
             color: 'white',
-            marginTop: '24px',
-            fontSize: '1.1rem',
-            fontWeight: '800',
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
+            marginTop: '20px',
+            fontSize: '18px',
+            fontWeight: '600',
           }}>സേവ് ചെയ്യുന്നു...</p>
           <style>{`
             @keyframes spin {

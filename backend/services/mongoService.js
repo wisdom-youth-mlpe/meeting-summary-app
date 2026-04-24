@@ -399,15 +399,19 @@ class MongoService {
       });
 
       if (validQhlsRows.length > 0) {
-        const headings = 'യൂണിറ്റ്, ദിവസം, ഫാക്കൽറ്റി, പുരുഷൻ, സ്ത്രീ';
+        const headings = 'യൂണിറ്റ്, ദിവസം, ഫാക്കൽറ്റി, മൊബൈൽ, സിലബസ്, സ്ഥലം, റമദാനിന് ശേഷം, പുരുഷൻ, സ്ത്രീ';
         
         const qhlsRowsFormatted = validQhlsRows.map(row => {
           const unit = row.unit || '';
           const day = row.day || '';
           const faculty = row.faculty || '';
+          const mobile = row.facultyMobile || '';
+          const syllabus = row.syllabus || '';
+          const location = row.location || '';
+          const afterRamadhan = row.afterRamadhan === 'yes' ? 'ഉണ്ട്' : (row.afterRamadhan === 'no' ? 'ഇല്ല' : '');
           const male = row.male || '0';
           const female = row.female || '0';
-          return `${unit}, ${day}, ${faculty}, ${male}, ${female}`;
+          return `${unit}, ${day}, ${faculty}, ${mobile}, ${syllabus}, ${location}, ${afterRamadhan}, ${male}, ${female}`;
         });
 
         qhlsReport = `${headings}\n${qhlsRowsFormatted.join('\n')}`;
