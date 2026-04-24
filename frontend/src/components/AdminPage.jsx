@@ -16,6 +16,12 @@ const AdminPage = () => {
             description: 'Change the day used to define the weekly cycle.',
             icon: '📅',
             path: '/admin/meeting-day'
+        },
+        {
+            title: 'Zone Management',
+            description: 'Manage zones and geographic divisions.',
+            icon: '🗺️',
+            path: '/admin/zones'
         }
     ];
 

@@ -1250,3 +1250,68 @@ router.post('/settings', isAdmin, async (req, res) => {
 });
 
 module.exports = router;
+
+// --- Administrative Routes (Admin Only) ---
+// Note: We apply these separately to avoid interfering with public GET routes
+const adminAuth = [authenticate, requireRole('admin')];
+
+router.post('/zones', adminAuth, express.json(), async (req, res) => {
+  try {
+    const { zoneId, name, districtId, roles } = req.body;
+    if (!zoneId || !name || !districtId) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    const result = await mongoService.createZone({ zoneId, name, districtId, roles: roles || [] });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.put('/zones/:zoneId', adminAuth, express.json(), async (req, res) => {
+  try {
+    const { zoneId } = req.params;
+    const result = await mongoService.updateZone(zoneId, req.body);
+    if (!result) return res.status(404).json({ success: false, error: 'Zone not found' });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.delete('/zones/:zoneId', adminAuth, async (req, res) => {
+  try {
+    const { zoneId } = req.params;
+    const Zone = require('../models/Zone');
+    const result = await Zone.findOneAndDelete({ zoneId });
+    if (!result) return res.status(404).json({ success: false, error: 'Zone not found' });
+    res.json({ success: true, message: 'Zone deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/districts', adminAuth, express.json(), async (req, res) => {
+  try {
+    const { districtId, name } = req.body;
+    if (!districtId || !name) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    const result = await mongoService.createDistrict({ districtId, name });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.delete('/districts/:districtId', adminAuth, async (req, res) => {
+  try {
+    const { districtId } = req.params;
+    const District = require('../models/District');
+    const result = await District.findOneAndDelete({ districtId });
+    if (!result) return res.status(404).json({ success: false, error: 'District not found' });
+    res.json({ success: true, message: 'District deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});

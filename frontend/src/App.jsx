@@ -15,6 +15,7 @@ const QHLSDashboard = React.lazy(() => import('./components/QHLSDashboard'));
 const MemberManagement = React.lazy(() => import('./components/MemberManagement'));
 const AdminPage = React.lazy(() => import('./components/AdminPage'));
 const MeetingDayConfig = React.lazy(() => import('./components/MeetingDayConfig'));
+const ZoneManagement = React.lazy(() => import('./components/ZoneManagement'));
 
 // Layout component for authenticated pages
 const AuthenticatedLayout = ({ children }) => {
@@ -86,19 +87,28 @@ const AuthenticatedLayout = ({ children }) => {
 
   return (
     <div>
-      {/* Simple header with username and logout */}
       <header style={headerStyles.header}>
-        <div style={headerStyles.userInfo}>
-          {user && (
-            <span style={headerStyles.username}>
-              {user.username}
-            </span>
-          )}
-          {isAntiGravity && (
-            <span style={headerStyles.antiGravityBadge}>
-              ⚡ ANTI-GRAVITY
-            </span>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ 
+            fontSize: '18px', 
+            fontWeight: '800', 
+            color: 'var(--primary)',
+            letterSpacing: '-0.5px'
+          }}>
+            Wisdom MLP E Meetings
+          </span>
+          <div style={{ ...headerStyles.userInfo, marginTop: '4px' }}>
+            {user && (
+              <span style={headerStyles.username}>
+                {user.username}
+              </span>
+            )}
+            {isAntiGravity && (
+              <span style={headerStyles.antiGravityBadge}>
+                ⚡ ANTI-GRAVITY
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={handleLogout}
@@ -208,6 +218,16 @@ function App() {
             <ProtectedRoute requiredRole="admin">
               <AuthenticatedLayout>
                 <MeetingDayConfig />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/zones"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AuthenticatedLayout>
+                <ZoneManagement />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

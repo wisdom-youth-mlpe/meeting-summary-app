@@ -36,7 +36,6 @@ const MeetingReport = () => {
 
   useEffect(() => {
     fetchMeetingDay();
-    fetchMeetings();
   }, []);
 
   const fetchMeetingDay = async () => {
