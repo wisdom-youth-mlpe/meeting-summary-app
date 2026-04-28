@@ -8,6 +8,22 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Force the new service worker to take control immediately
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        // Use network-first for HTML so users always get the latest app shell
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\/(index\.html)?$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-cache',
+              networkTimeoutSeconds: 5,
+            },
+          },
+        ],
+      },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
         name: 'Wisdom MLP E Meetings',
@@ -44,3 +60,4 @@ export default defineConfig({
     },
   },
 })
+
