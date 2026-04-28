@@ -612,6 +612,23 @@ const MeetingForm = () => {
     setQhlsData(data);
   }, []);
 
+  const handleAddQhlsRow = () => {
+    const defaultQhlsRow = { 
+      unit: '', 
+      day: '', 
+      faculty: '', 
+      facultyMobile: '', 
+      syllabus: '', 
+      location: '', 
+      afterRamadhan: '', 
+      male: '', 
+      female: '', 
+      hasQhls: true,
+      isExtra: true
+    };
+    setQhlsData([...qhlsData, defaultQhlsRow]);
+  };
+
   // Persist form draft whenever relevant state changes
   useEffect(() => {
     if (!draftHydrated) return;
@@ -1296,6 +1313,7 @@ const MeetingForm = () => {
           qhlsData={qhlsData}
           onQHLSChange={handleQHLSChange}
           availableUnits={zoneUnits}
+          onAddExtraRow={handleAddQhlsRow}
         />
 
         {/* Meeting Roles Section */}

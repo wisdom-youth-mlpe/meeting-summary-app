@@ -154,10 +154,11 @@ class QHLSService {
    * @returns {Object} Complete dashboard data
    */
   async getDashboardData(weekOffset = 0) {
-    const [responses, stats, missing] = await Promise.all([
+    const [responses, stats, missing, prevResponses] = await Promise.all([
       this.getQHLSByWeek(weekOffset),
       this.getQHLSStats(weekOffset),
       this.getMissingUnits(weekOffset),
+      this.getQHLSByWeek(weekOffset - 1),
     ]);
     
     const today = new Date();
@@ -165,10 +166,38 @@ class QHLSService {
     targetDate.setDate(today.getDate() + (weekOffset * 7));
     const { weekStart, weekEnd } = this.getWeekBoundaries(targetDate.toISOString().split('T')[0]);
     
+    // Create a map for quick lookup of previous week's data
+    const prevMap = new Map();
+    prevResponses.forEach(r => {
+      prevMap.set(`${r.zone}::${r.unit}`, r);
+    });
+
+    // Calculate variations for each response
+    const responsesWithVariations = responses.map(r => {
+      const prev = prevMap.get(`${r.zone}::${r.unit}`);
+      const variation = {
+        male: prev ? r.male - prev.male : null,
+        female: prev ? r.female - prev.female : null,
+        total: prev ? (r.male + r.female) - (prev.male + prev.female) : null,
+        isFirst: !prev
+      };
+      return { ...r, variation };
+    });
+
+    // Group responses by zone
+    const groupedResponses = {};
+    responsesWithVariations.forEach(r => {
+      if (!groupedResponses[r.zone]) {
+        groupedResponses[r.zone] = [];
+      }
+      groupedResponses[r.zone].push(r);
+    });
+
     return {
       weekStart,
       weekEnd,
-      responses,
+      responses: responsesWithVariations,
+      groupedResponses,
       stats,
       missing,
     };

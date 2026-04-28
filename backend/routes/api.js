@@ -4,6 +4,7 @@ const { authenticate } = require('../middleware/auth');
 const { isMongoConnected } = require('../config/mongodb');
 const mongoService = require('../services/mongoService');
 const { hasZoneAccess, getAccessibleZones } = require('../middleware/checkZoneAccess');
+const { requireRole } = require('../middleware/authorize');
 
 // Apply authentication middleware to all routes except debug
 router.use((req, res, next) => {
@@ -25,6 +26,17 @@ const canCreateMeeting = (req, res, next) => {
     success: false, 
     error: 'Access denied', 
     message: 'Only zone admins and admins can create meetings' 
+  });
+};
+
+const isAdmin = (req, res, next) => {
+  if (req.user && req.user.roles && req.user.roles.includes('admin')) {
+    return next();
+  }
+  return res.status(403).json({
+    success: false,
+    error: 'Access denied',
+    message: 'Admin access required'
   });
 };
 
@@ -330,12 +342,17 @@ router.get('/meetings/list', async (req, res) => {
     }
 
     console.log('[API] Fetching meetings from MongoDB');
-    let meetings = await mongoService.getAllMeetings();
     
-    // Filter meetings based on user role and access
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 0;
+    const search = req.query.search || '';
+    const date = req.query.date || '';
+    
+    // Build filter based on user role and access
     const user = req.user;
+    const filter = {};
     
-    // Admin sees all meetings
+    // Admin sees all meetings, others are filtered
     if (!user.roles || !user.roles.includes('admin')) {
       const allZones = await mongoService.getZones();
       
@@ -346,27 +363,27 @@ router.get('/meetings/list', async (req, res) => {
         const districtZones = allZones
           .filter(z => districtsList.includes(z.districtId))
           .map(z => z.name);
-        meetings = meetings.filter(m => districtZones.includes(m.zoneName));
+        filter.zoneName = { $in: districtZones };
       }
       // District admin - filter by district access
       else if (user.roles && user.roles.includes('district_admin')) {
         const districtZones = allZones
           .filter(z => user.districtAccess && user.districtAccess.includes(z.districtId))
           .map(z => z.name);
-        
-        meetings = meetings.filter(m => districtZones.includes(m.zoneName));
+        filter.zoneName = { $in: districtZones };
       }
       // Zone admin - filter by zone access
       else if (user.roles && user.roles.includes('zone_admin')) {
         const accessibleZoneNames = allZones
           .filter(z => user.zoneAccess && user.zoneAccess.includes(z.id))
           .map(z => z.name);
-        
-        meetings = meetings.filter(m => accessibleZoneNames.includes(m.zoneName));
+        filter.zoneName = { $in: accessibleZoneNames };
       }
     }
     
-    res.json({ success: true, meetings });
+    const { meetings, pagination } = await mongoService.getAllMeetings(filter, page, limit, search, date);
+    
+    res.json({ success: true, meetings, pagination });
   } catch (error) {
     console.error('Error in /api/meetings/list:', error);
     res.status(500).json({
@@ -1203,4 +1220,99 @@ router.get('/qhls/missing/:offset', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/settings/:key
+ * Fetch a setting by key
+ */
+router.get('/settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const value = await mongoService.getSetting(key);
+    res.json({ success: true, value });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/settings
+ * Update a setting (Admin only)
+ */
+router.post('/settings', isAdmin, async (req, res) => {
+  try {
+    const { key, value, description } = req.body;
+    if (!key) return res.status(400).json({ success: false, error: 'Key is required' });
+    
+    await mongoService.updateSetting(key, value, description);
+    res.json({ success: true, message: 'Setting updated' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
+
+// --- Administrative Routes (Admin Only) ---
+// Note: We apply these separately to avoid interfering with public GET routes
+const adminAuth = [authenticate, requireRole('admin')];
+
+router.post('/zones', adminAuth, express.json(), async (req, res) => {
+  try {
+    const { zoneId, name, districtId, roles } = req.body;
+    if (!zoneId || !name || !districtId) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    const result = await mongoService.createZone({ zoneId, name, districtId, roles: roles || [] });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.put('/zones/:zoneId', adminAuth, express.json(), async (req, res) => {
+  try {
+    const { zoneId } = req.params;
+    const result = await mongoService.updateZone(zoneId, req.body);
+    if (!result) return res.status(404).json({ success: false, error: 'Zone not found' });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.delete('/zones/:zoneId', adminAuth, async (req, res) => {
+  try {
+    const { zoneId } = req.params;
+    const Zone = require('../models/Zone');
+    const result = await Zone.findOneAndDelete({ zoneId });
+    if (!result) return res.status(404).json({ success: false, error: 'Zone not found' });
+    res.json({ success: true, message: 'Zone deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/districts', adminAuth, express.json(), async (req, res) => {
+  try {
+    const { districtId, name } = req.body;
+    if (!districtId || !name) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    const result = await mongoService.createDistrict({ districtId, name });
+    res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.delete('/districts/:districtId', adminAuth, async (req, res) => {
+  try {
+    const { districtId } = req.params;
+    const District = require('../models/District');
+    const result = await District.findOneAndDelete({ districtId });
+    if (!result) return res.status(404).json({ success: false, error: 'District not found' });
+    res.json({ success: true, message: 'District deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});

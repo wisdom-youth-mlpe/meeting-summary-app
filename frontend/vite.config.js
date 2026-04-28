@@ -1,9 +1,56 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      // Force the new service worker to take control immediately
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        // Use network-first for HTML so users always get the latest app shell
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\/(index\.html)?$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-cache',
+              networkTimeoutSeconds: 5,
+            },
+          },
+        ],
+      },
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      manifest: {
+        name: 'Wisdom MLP E Meetings',
+        short_name: 'Wisdom Meetings',
+        description: 'Professional Meeting Summary and Reporting Application',
+        theme_color: '#3498db',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      }
+    })
+  ],
   server: {
     proxy: {
       '/api': {
@@ -13,3 +60,4 @@ export default defineConfig({
     },
   },
 })
+

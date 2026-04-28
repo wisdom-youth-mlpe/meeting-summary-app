@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useEffect } from 'react';
 
-const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) => {
+const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [], onAddExtraRow }) => {
   const filteredUnits = Array.isArray(availableUnits)
     ? Array.from(new Set(availableUnits.filter((unit) => unit && unit.trim() !== '')))
     : [];
@@ -114,6 +114,22 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
       display: 'flex',
       flexDirection: 'column',
     },
+    addButton: {
+      marginTop: '16px',
+      padding: '12px 20px',
+      background: 'var(--gray-50)',
+      color: 'var(--primary)',
+      border: '1px dashed var(--primary)',
+      borderRadius: 'var(--radius-md)',
+      cursor: 'pointer',
+      fontWeight: '700',
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      transition: 'all 0.2s ease',
+    },
   };
 
   // Mobile card view for smaller screens
@@ -125,7 +141,17 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
           <div key={index} style={styles.mobileCard}>
             <div style={styles.mobileLabel}>യൂണിറ്റ്</div>
             <div style={styles.mobileValue}>
-              {row.unit || filteredUnits[index] || `യൂണിറ്റ് ${index + 1}`}
+              {row.isExtra ? (
+                <input
+                  type="text"
+                  value={row.unit || ''}
+                  onChange={(e) => handleFieldChange(index, 'unit', e.target.value)}
+                  placeholder="യൂണിറ്റ് പേര്"
+                  style={styles.input}
+                />
+              ) : (
+                row.unit || filteredUnits[index] || `യൂണിറ്റ് ${index + 1}`
+              )}
             </div>
 
             <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -282,9 +308,15 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
                 <td style={styles.td}>
                   <input
                     type="text"
-                    value={row.unit || filteredUnits[index] || ''}
-                    disabled
-                    style={{ ...styles.input, ...styles.inputDisabled, minWidth: '150px' }}
+                    value={row.unit || ''}
+                    onChange={(e) => handleFieldChange(index, 'unit', e.target.value)}
+                    disabled={!row.isExtra}
+                    placeholder={row.isExtra ? "യൂണിറ്റ് പേര്" : ""}
+                    style={{ 
+                      ...styles.input, 
+                      ...(!row.isExtra ? styles.inputDisabled : {}), 
+                      minWidth: '150px' 
+                    }}
                   />
                 </td>
                 <td style={{ ...styles.td, textAlign: 'center' }}>
@@ -445,6 +477,25 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange, availableUnits = [] }) =
       <div className="qhls-desktop-view">
         <DesktopView />
       </div>
+
+      {onAddExtraRow && (
+        <button 
+          type="button" 
+          onClick={onAddExtraRow} 
+          style={styles.addButton}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = 'var(--primary-light)';
+            e.currentTarget.style.borderStyle = 'solid';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'var(--gray-50)';
+            e.currentTarget.style.borderStyle = 'dashed';
+          }}
+        >
+          ➕ കൂടുതൽ യൂണിറ്റുകൾ ചേർക്കുക (Add More Units)
+        </button>
+      )}
+
       <style>{`
         @media (max-width: 640px) {
           .qhls-mobile-view { display: block !important; }

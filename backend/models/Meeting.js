@@ -86,6 +86,8 @@ const MeetingSchema = new mongoose.Schema({
 
 // Index for efficient queries
 MeetingSchema.index({ zoneName: 1, date: -1 });
+MeetingSchema.index({ date: -1 });
+MeetingSchema.index({ createdAt: -1 });
 
 const Meeting = mongoose.model('Meeting', MeetingSchema);
 

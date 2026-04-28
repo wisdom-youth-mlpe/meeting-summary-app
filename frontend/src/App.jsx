@@ -13,6 +13,9 @@ const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const UserManagement = React.lazy(() => import('./components/UserManagement'));
 const QHLSDashboard = React.lazy(() => import('./components/QHLSDashboard'));
 const MemberManagement = React.lazy(() => import('./components/MemberManagement'));
+const AdminPage = React.lazy(() => import('./components/AdminPage'));
+const MeetingDayConfig = React.lazy(() => import('./components/MeetingDayConfig'));
+const ZoneManagement = React.lazy(() => import('./components/ZoneManagement'));
 
 // Layout component for authenticated pages
 const AuthenticatedLayout = ({ children }) => {
@@ -84,19 +87,28 @@ const AuthenticatedLayout = ({ children }) => {
 
   return (
     <div>
-      {/* Simple header with username and logout */}
       <header style={headerStyles.header}>
-        <div style={headerStyles.userInfo}>
-          {user && (
-            <span style={headerStyles.username}>
-              {user.username}
-            </span>
-          )}
-          {isAntiGravity && (
-            <span style={headerStyles.antiGravityBadge}>
-              ⚡ ANTI-GRAVITY
-            </span>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ 
+            fontSize: '18px', 
+            fontWeight: '800', 
+            color: 'var(--primary)',
+            letterSpacing: '-0.5px'
+          }}>
+            Wisdom MLP E Meetings
+          </span>
+          <div style={{ ...headerStyles.userInfo, marginTop: '4px' }}>
+            {user && (
+              <span style={headerStyles.username}>
+                {user.username}
+              </span>
+            )}
+            {isAntiGravity && (
+              <span style={headerStyles.antiGravityBadge}>
+                ⚡ ANTI-GRAVITY
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={handleLogout}
@@ -109,6 +121,20 @@ const AuthenticatedLayout = ({ children }) => {
       {/* Main content with bottom padding */}
       <div style={headerStyles.contentWrapper}>
         {children}
+      </div>
+
+      {/* Deployment Version - Hidden or subtle */}
+      <div style={{
+        position: 'fixed',
+        bottom: '80px',
+        right: '10px',
+        fontSize: '10px',
+        color: 'var(--gray-400)',
+        opacity: 0.5,
+        pointerEvents: 'none',
+        zIndex: 1000
+      }}>
+        v1.0.3 - 2026.04.28
       </div>
 
       {/* Bottom Navigation */}
@@ -171,7 +197,37 @@ function App() {
           element={
             <ProtectedRoute requiredRole="admin">
               <AuthenticatedLayout>
+                <AdminPage />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AuthenticatedLayout>
                 <UserManagement />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/meeting-day"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AuthenticatedLayout>
+                <MeetingDayConfig />
+              </AuthenticatedLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/zones"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AuthenticatedLayout>
+                <ZoneManagement />
               </AuthenticatedLayout>
             </ProtectedRoute>
           }

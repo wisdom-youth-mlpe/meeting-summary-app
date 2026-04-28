@@ -66,8 +66,11 @@ export const getMeetingReport = async (meetingId) => {
   return response.data;
 };
 
-export const getAllMeetings = async (districts = null) => {
-  const params = districts ? { districts } : {};
+export const getAllMeetings = async (districts = null, page = 1, limit = 20, search = '', date = '') => {
+  const params = { page, limit };
+  if (districts) params.districts = districts;
+  if (search) params.search = search;
+  if (date) params.date = date;
   const response = await api.get('/api/meetings/list', { params });
   return response.data;
 };
@@ -101,4 +104,16 @@ export const getAttendanceSummary = async (zoneId, startDate, endDate) => {
   const response = await api.get('/api/attendance-summary', { params });
   return response.data;
 };
+
+export const getSetting = async (key) => {
+  const response = await api.get(`/api/settings/${key}`);
+  return response.data;
+};
+
+export const updateSetting = async (key, value, description = '') => {
+  const response = await api.post('/api/settings', { key, value, description });
+  return response.data;
+};
+
+export default api;
 

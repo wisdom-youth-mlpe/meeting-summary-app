@@ -18,14 +18,20 @@ const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = process.env.CORS_ORIGIN 
       ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
-      : ['*'];
+      : ['https://meeting.wisdommlpe.site', 'https://dev.meeting.wisdommlpe.site'];
     
-    // Log for debugging
-    console.log('CORS request from origin:', origin);
-    console.log('Allowed origins:', allowedOrigins);
-    
+    // Add localhost for development
+    if (process.env.NODE_ENV !== 'production') {
+      if (!allowedOrigins.includes('http://localhost:3000')) allowedOrigins.push('http://localhost:3000');
+      if (!allowedOrigins.includes('http://localhost:3001')) allowedOrigins.push('http://localhost:3001');
+      if (!allowedOrigins.includes('http://localhost:5173')) allowedOrigins.push('http://localhost:5173');
+    }
+
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
     
     // If CORS_ORIGIN is '*', allow all origins
     if (allowedOrigins.includes('*')) {
@@ -33,16 +39,17 @@ const corsOptions = {
     }
     
     // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin) || allowedOrigins.some(ao => origin.endsWith(ao.replace('https://', '')))) {
       callback(null, true);
     } else {
       console.warn('CORS blocked origin:', origin);
+      console.log('Allowed origins were:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
 app.use(cors(corsOptions));

@@ -67,7 +67,7 @@ const BottomNavigation = () => {
         tabs.push({
             id: 'form',
             path: '/form',
-            label: 'ഫോം',
+            label: 'റിപ്പോർട്ട് ചെയ്യുക',
             icon: Icons.Form,
         });
     }
@@ -77,7 +77,7 @@ const BottomNavigation = () => {
         tabs.push({
             id: 'report',
             path: '/report',
-            label: 'റിപ്പോർട്ട്',
+            label: 'റിപ്പോർട്ടുകൾ',
             icon: Icons.Report,
         });
     }
@@ -97,7 +97,7 @@ const BottomNavigation = () => {
         tabs.push({
             id: 'qhls',
             path: '/qhls',
-            label: 'QHLS',
+            label: 'QHLS ഡാറ്റ',
             icon: Icons.QHLS,
         });
     }

@@ -10,6 +10,7 @@ const Unit = require('../models/Unit');
 const User = require('../models/User');
 const Meeting = require('../models/Meeting');
 const Agenda = require('../models/Agenda');
+const Settings = require('../models/Settings');
 
 class MongoService {
   /**
@@ -265,15 +266,43 @@ class MongoService {
     };
   }
 
-  async getAllMeetings() {
-    const meetings = await Meeting.find().sort({ createdAt: -1 });
-    return meetings.map(m => ({
-      meetingId: m.meetingId,
-      zoneName: m.zoneName,
-      zoneId: m.zoneId,
-      date: m.date,
-      savedDate: m.createdAt?.toISOString() || '',
-    }));
+  async getAllMeetings(filter = {}, page = 1, limit = 0, search = '', date = '') {
+    const finalFilter = { ...filter };
+    
+    if (search) {
+      finalFilter.zoneName = { $regex: search, $options: 'i' };
+    }
+    
+    if (date) {
+      finalFilter.date = date;
+    }
+
+    const query = Meeting.find(finalFilter).sort({ date: -1, createdAt: -1 });
+    
+    if (limit > 0) {
+      query.skip((page - 1) * limit).limit(limit);
+    }
+    
+    const [meetings, total] = await Promise.all([
+      query,
+      Meeting.countDocuments(finalFilter)
+    ]);
+
+    return {
+      meetings: meetings.map(m => ({
+        meetingId: m.meetingId,
+        zoneName: m.zoneName,
+        zoneId: m.zoneId,
+        date: m.date,
+        savedDate: m.createdAt?.toISOString() || '',
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: limit > 0 ? Math.ceil(total / limit) : 1
+      }
+    };
   }
 
   async getMeetingsByDateRange(startDate, endDate) {
@@ -478,6 +507,21 @@ class MongoService {
       },
     }));
     return User.bulkWrite(operations);
+  }
+
+  // ==================== SETTINGS ====================
+
+  async getSetting(key, defaultValue = null) {
+    const setting = await Settings.findOne({ key });
+    return setting ? setting.value : defaultValue;
+  }
+
+  async updateSetting(key, value, description = '') {
+    return Settings.findOneAndUpdate(
+      { key },
+      { $set: { value, description, updatedAt: new Date() } },
+      { new: true, upsert: true }
+    );
   }
 }
 

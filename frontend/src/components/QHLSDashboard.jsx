@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './QHLSDashboard.css';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import api from '../services/api';
 
 function QHLSDashboard() {
     const [weekOffset, setWeekOffset] = useState(0);
@@ -12,6 +11,7 @@ function QHLSDashboard() {
     // Filter and view state
     const [zoneFilter, setZoneFilter] = useState('');
     const [activeTab, setActiveTab] = useState('responses'); // 'responses' or 'missing'
+    const [expandedZones, setExpandedZones] = useState({}); // Tracking expanded zones
 
     // Fetch dashboard data
     useEffect(() => {
@@ -23,22 +23,15 @@ function QHLSDashboard() {
         setError('');
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/api/qhls/dashboard?weekOffset=${weekOffset}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                setDashboardData(result.data);
+            const response = await api.get(`/api/qhls/dashboard?weekOffset=${weekOffset}`);
+            
+            if (response.data.success) {
+                setDashboardData(response.data.data);
             } else {
-                setError(result.error || 'Failed to load data');
+                setError(response.data.error || 'Failed to load data');
             }
         } catch (err) {
-            setError('Failed to load data. Please refresh.');
+            setError(err.response?.data?.error || 'Failed to load data. Please refresh.');
             console.error('Error fetching QHLS dashboard:', err);
         } finally {
             setLoading(false);
@@ -157,40 +150,68 @@ function QHLSDashboard() {
                                 </button>
                             </div>
 
-                            {/* Response Cards */}
+                            {/* Response Groups by Zone */}
                             <div className="qhls-cards-container">
-                                {filteredResponses.filter(r => r.hasQhls).length === 0 ? (
+                                {(!dashboardData?.groupedResponses || Object.keys(dashboardData.groupedResponses).length === 0) ? (
                                     <div className="qhls-empty-state">
                                         {loading ? 'Loading...' : 'No QHLS data available'}
                                     </div>
                                 ) : (
-                                    filteredResponses.filter(r => r.hasQhls).map((row, index) => (
-                                        <div key={index} className="qhls-response-card">
-                                            <div className="qhls-card-header">
-                                                <span className="qhls-card-zone">{row.zone}</span>
-                                                <span className="qhls-status-badge qhls-status-yes">ഉണ്ട്</span>
-                                            </div>
-                                            <div className="qhls-card-unit">{row.unit}</div>
-                                            <div className="qhls-card-details">
-                                                <span>📅 {row.day || '-'}</span>
-                                                <span>👤 {row.faculty || '-'}</span>
-                                            </div>
-                                            <div className="qhls-card-counts">
-                                                <div className="qhls-count-item">
-                                                    <span className="qhls-count-value">{row.male}</span>
-                                                    <span className="qhls-count-label">പുരുഷൻ</span>
+                                    Object.entries(dashboardData.groupedResponses)
+                                        .filter(([zone]) => !zoneFilter || zone === zoneFilter)
+                                        .map(([zone, units]) => (
+                                            <div key={zone} className="qhls-zone-group">
+                                                <div 
+                                                    className={`qhls-zone-header-card ${expandedZones[zone] ? 'expanded' : ''}`}
+                                                    onClick={() => setExpandedZones(prev => ({ ...prev, [zone]: !prev[zone] }))}
+                                                >
+                                                    <div className="qhls-zone-info">
+                                                        <span className="qhls-zone-name">{zone}</span>
+                                                        <span className="qhls-zone-count">{units.length} ശാഖകൾ</span>
+                                                    </div>
+                                                    <div className="qhls-zone-toggle">
+                                                        {expandedZones[zone] ? '🔼' : '🔽'}
+                                                    </div>
                                                 </div>
-                                                <div className="qhls-count-item">
-                                                    <span className="qhls-count-value">{row.female}</span>
-                                                    <span className="qhls-count-label">സ്ത്രീ</span>
-                                                </div>
-                                                <div className="qhls-count-item total">
-                                                    <span className="qhls-count-value">{row.male + row.female}</span>
-                                                    <span className="qhls-count-label">ആകെ</span>
-                                                </div>
+
+                                                {expandedZones[zone] && (
+                                                    <div className="qhls-units-grid">
+                                                        {units.map((row, idx) => (
+                                                            <div key={idx} className="qhls-unit-row-card">
+                                                                <div className="qhls-unit-top">
+                                                                    <div className="qhls-unit-name">{row.unit}</div>
+                                                                    <div className="qhls-unit-date">📅 {row.date} ({row.day})</div>
+                                                                </div>
+                                                                
+                                                                <div className="qhls-metrics-grid">
+                                                                    <div className="qhls-metric">
+                                                                        <div className="qhls-metric-label">പുരുഷൻ</div>
+                                                                        <div className="qhls-metric-row">
+                                                                            <span className="qhls-metric-value">{row.male}</span>
+                                                                            <VariationBadge val={row.variation?.male} isFirst={row.variation?.isFirst} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="qhls-metric">
+                                                                        <div className="qhls-metric-label">സ്ത്രീ</div>
+                                                                        <div className="qhls-metric-row">
+                                                                            <span className="qhls-metric-value">{row.female}</span>
+                                                                            <VariationBadge val={row.variation?.female} isFirst={row.variation?.isFirst} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="qhls-metric total">
+                                                                        <div className="qhls-metric-label">ആകെ</div>
+                                                                        <div className="qhls-metric-row">
+                                                                            <span className="qhls-metric-value">{row.male + row.female}</span>
+                                                                            <VariationBadge val={row.variation?.total} isFirst={row.variation?.isFirst} />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))
+                                        ))
                                 )}
                             </div>
                         </>
@@ -225,6 +246,18 @@ function QHLSDashboard() {
                 </>
             )}
         </div>
+    );
+}
+
+function VariationBadge({ val, isFirst }) {
+    if (isFirst) return <span className="qhls-variation first">+</span>;
+    if (val === null || val === undefined || val === 0) return null;
+    
+    const isPositive = val > 0;
+    return (
+        <span className={`qhls-variation ${isPositive ? 'positive' : 'negative'}`}>
+            {isPositive ? '+' : ''}{val}
+        </span>
     );
 }
 

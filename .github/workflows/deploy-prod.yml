@@ -58,6 +58,7 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
+          no-cache: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
           build-args: |
@@ -79,6 +80,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
+          no-cache: true
           tags: ${{ steps.meta-api.outputs.tags }}
           labels: ${{ steps.meta-api.outputs.labels }}
 
@@ -113,27 +115,29 @@ jobs:
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          envs: GITHUB_TOKEN
           script: |
             cd /srv/apps/meeting-summary
 
-            # Login to GHCR
-            echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u fahizkp --password-stdin
+            # Login to GHCR using the fresh per-run GITHUB_TOKEN
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u fahizkp --password-stdin
 
             # Pull latest images
             docker pull ghcr.io/wisdom-youth-mlpe/meeting-summary-frontend:latest
             docker pull ghcr.io/wisdom-youth-mlpe/meeting-summary-backend:latest
 
-            # Stop and remove old containers if exist
-            docker rm -f meeting-summary-backend meeting-summary-frontend || true
+            # Stop old containers cleanly
             docker compose down --remove-orphans || true
 
-            # Start the new containers
-            docker compose up -d
+            # Start fresh - force-recreate ensures the new image is used
+            docker compose up -d --force-recreate
 
             # Clean up old images
             docker image prune -f

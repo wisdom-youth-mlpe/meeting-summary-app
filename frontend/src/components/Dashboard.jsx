@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDashboardStats, getZones, getMeetingReport } from '../services/api';
+import { getDashboardStats, getZones, getMeetingReport, getSetting } from '../services/api';
 import { getUser, hasRole } from '../services/auth';
 import AttendanceSummary from './AttendanceSummary';
 
@@ -21,11 +21,27 @@ const Dashboard = () => {
     const [selectedReport, setSelectedReport] = useState(null);
     const [selectedMeetingData, setSelectedMeetingData] = useState(null);
     const [reportLoading, setReportLoading] = useState(false);
+    const [meetingDay, setMeetingDay] = useState(3); // Default to Wednesday
 
     useEffect(() => {
         loadZones();
-        initializeDates('week');
+        fetchMeetingDay();
     }, []);
+
+    const fetchMeetingDay = async () => {
+        try {
+            const response = await getSetting('district_meeting_day');
+            if (response.success && response.value !== null) {
+                setMeetingDay(parseInt(response.value));
+                initializeDates('week', parseInt(response.value));
+            } else {
+                initializeDates('week', 3); // Fallback to Wednesday
+            }
+        } catch (e) {
+            console.error("Failed to fetch meeting day setting", e);
+            initializeDates('week', 3);
+        }
+    };
 
     useEffect(() => {
         if (startDate && endDate) {
@@ -56,18 +72,20 @@ const Dashboard = () => {
         }
     };
 
-    const initializeDates = (filterType) => {
+    const initializeDates = (filterType, targetDay = null) => {
         const today = new Date();
         let start = new Date();
         let end = new Date();
+        
+        const currentTargetDay = targetDay !== null ? targetDay : meetingDay;
 
         if (filterType === 'week') {
-            // Week runs Wednesday → Tuesday
+            // Week runs from configured day to configured day - 1
             // day: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
             const day = today.getDay();
-            // days since last Wednesday: Wed=0,Thu=1,Fri=2,Sat=3,Sun=4,Mon=5,Tue=6
-            const daysSinceWed = (day + 4) % 7;
-            start.setDate(today.getDate() - daysSinceWed);
+            // days since last target day
+            const diff = (day - currentTargetDay + 7) % 7;
+            start.setDate(today.getDate() - diff);
         } else if (filterType === 'month') {
             start.setDate(1); // 1st of month
         } else if (filterType === 'custom') {
@@ -137,6 +155,42 @@ const Dashboard = () => {
     };
 
     // --- Renderers ---
+
+    const CollapsibleCard = ({ title, children, defaultExpanded = true, className = "" }) => {
+        const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+        return (
+            <div className={`card ${className}`} style={{ marginBottom: '16px', padding: 0, overflow: 'hidden' }}>
+                <div 
+                    onClick={() => setIsExpanded(!isExpanded)} 
+                    style={{ 
+                        padding: '16px 20px', 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        cursor: 'pointer',
+                        background: isExpanded ? 'var(--gray-50)' : 'white',
+                        borderBottom: isExpanded ? '1px solid #eee' : 'none',
+                        transition: 'background 0.2s'
+                    }}
+                >
+                    <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#2c3e50' }}>{title}</h3>
+                    <span style={{ 
+                        fontSize: '1.2rem', 
+                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                        color: '#666'
+                    }}>
+                        ▼
+                    </span>
+                </div>
+                {isExpanded && (
+                    <div style={{ padding: '20px', animation: 'fadeIn 0.3s ease' }}>
+                        {children}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const renderControls = () => (
         <div className="dashboard-controls card">
@@ -214,8 +268,10 @@ const Dashboard = () => {
             return (
                 <div className="dashboard-grid">
                     {/* Zones WITHOUT meetings */}
-                    <div className="card full-width">
-                        <h3>{periodLabel} മീറ്റിംഗ് നടക്കാത്ത മണ്ഡലങ്ങൾ ({noMeetingZones.length})</h3>
+                    <CollapsibleCard 
+                        className="full-width"
+                        title={`${periodLabel} മീറ്റിംഗ് നടക്കാത്ത മണ്ഡലങ്ങൾ (${noMeetingZones.length})`}
+                    >
                         {noMeetingZones.length === 0 ? (
                             <p className="empty-state success-text">എല്ലാ മണ്ഡലങ്ങളിലും മീറ്റിംഗ് നടന്നു!</p>
                         ) : (
@@ -227,11 +283,14 @@ const Dashboard = () => {
                                 ))}
                             </ol>
                         )}
-                    </div>
+                    </CollapsibleCard>
 
                     {/* Zones WITH meetings */}
-                    <div className="card full-width">
-                        <h3>{periodLabel} മീറ്റിംഗ് നടന്ന മണ്ഡലങ്ങൾ ({zonesWithMeetings?.length || 0})</h3>
+                    <CollapsibleCard 
+                        className="full-width"
+                        title={`${periodLabel} മീറ്റിംഗ് നടന്ന മണ്ഡലങ്ങൾ (${zonesWithMeetings?.length || 0})`}
+                        defaultExpanded={false}
+                    >
                         {(!zonesWithMeetings || zonesWithMeetings.length === 0) ? (
                             <p className="empty-state">ഒരു മണ്ഡലത്തിലും മീറ്റിംഗ് നടന്നിട്ടില്ല</p>
                         ) : (
@@ -248,7 +307,7 @@ const Dashboard = () => {
                                 })}
                             </ol>
                         )}
-                    </div>
+                    </CollapsibleCard>
 
                     {/* WhatsApp Message Card */}
                     {(() => {
@@ -282,21 +341,28 @@ const Dashboard = () => {
                             });
                         };
                         return (
-                            <div className="card full-width whatsapp-card">
+                            <CollapsibleCard 
+                                className="full-width whatsapp-card"
+                                title="📲 WhatsApp Message"
+                                defaultExpanded={false}
+                            >
                                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                    <h3 style={{ margin: 0 }}>📲 WhatsApp Message</h3>
+                                    <h3 style={{ margin: 0, display: 'none' }}>📲 WhatsApp Message</h3>
                                     <button id="wa-copy-btn" className="wa-copy-btn" onClick={handleCopyWhatsApp}>
                                         📋 Copy
                                     </button>
                                 </div>
                                 <pre className="whatsapp-preview">{whatsappMsg}</pre>
-                            </div>
+                            </CollapsibleCard>
                         );
                     })()}
 
                     {/* Members with 3+ Consecutive Leaves */}
-                    <div className="card full-width">
-                        <h3>⚠️ തുടർച്ചയായി 3 മീറ്റിംഗിൽ ലീവ് ആയ മെമ്പർമാർ</h3>
+                    <CollapsibleCard 
+                        className="full-width"
+                        title="⚠️ തുടർച്ചയായി 3 മീറ്റിംഗിൽ ലീവ് ആയ മെമ്പർമാർ"
+                        defaultExpanded={false}
+                    >
                         {consecutiveAbsence.length === 0 ? (
                             <p className="empty-state">ആരും ഇല്ല</p>
                         ) : (
@@ -308,12 +374,15 @@ const Dashboard = () => {
                                 ))}
                             </div>
                         )}
-                    </div>
+                    </CollapsibleCard>
 
                     {/* QHLS Missing Branches - Only show for week filter */}
                     {dateFilter === 'week' && (
-                        <div className="card full-width">
-                            <h3>QHLS നടക്കാത്ത ശാഖകൾ</h3>
+                        <CollapsibleCard 
+                            className="full-width"
+                            title="QHLS നടക്കാത്ത ശാഖകൾ"
+                            defaultExpanded={false}
+                        >
                             {(!qhlsMissingBranches || qhlsMissingBranches.length === 0) ? (
                                 <p className="empty-state success-text">എല്ലാ ശാഖകളിലും QHLS നടന്നു!</p>
                             ) : (
@@ -323,7 +392,7 @@ const Dashboard = () => {
                                     ))}
                                 </div>
                             )}
-                        </div>
+                        </CollapsibleCard>
                     )}
                 </div>
             );
@@ -377,7 +446,7 @@ const Dashboard = () => {
                                                     onClick={() => handleViewReport(meeting.meetingId)}
                                                     disabled={reportLoading}
                                                 >
-                                                    {reportLoading ? 'Loading...' : 'View'}
+                                                    {reportLoading ? 'Loading...' : 'റിപ്പോർട്ട്'}
                                                 </button>
                                             </td>
                                         </tr>
@@ -646,7 +715,12 @@ const Dashboard = () => {
                 )}
             </div>
             {dateFilter === 'week' && stats?.currentWeek && (
-                <h4 className="week-subtitle">Week {stats.currentWeek}</h4>
+                <h4 className="week-subtitle">
+                    Week {stats.currentWeek} 
+                    <span style={{ fontWeight: 'normal', marginLeft: '10px', color: '#666', fontSize: '0.9rem' }}>
+                        ({formatDate(startDate)} - {formatDate(endDate)})
+                    </span>
+                </h4>
             )}
             {dateFilter === 'month' && (
                 <h4 className="week-subtitle">
