@@ -34,13 +34,10 @@ services:
       - "traefik.http.routers.meeting-summary-dev.tls=true"
       - "traefik.http.routers.meeting-summary-dev.tls.certresolver=myresolver"
       - "traefik.http.services.meeting-summary-dev.loadbalancer.server.port=80"
-      - "traefik.http.routers.meeting-summary-dev.service=meeting-summary-dev"
       # HTTP to HTTPS redirect
       - "traefik.http.routers.meeting-summary-dev-http.rule=Host(`dev.meeting.wisdommlpe.site`)"
       - "traefik.http.routers.meeting-summary-dev-http.entrypoints=web"
       - "traefik.http.routers.meeting-summary-dev-http.middlewares=redirect-to-https"
-      - "traefik.http.routers.meeting-summary-dev-http.service=meeting-summary-dev"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
 networks:
   web:
