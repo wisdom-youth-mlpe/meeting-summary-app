@@ -134,7 +134,7 @@ const AuthenticatedLayout = ({ children }) => {
         pointerEvents: 'none',
         zIndex: 1000
       }}>
-        v1.0.2 - 2026.04.25.1
+        v1.0.3 - 2026.04.28
       </div>
 
       {/* Bottom Navigation */}
