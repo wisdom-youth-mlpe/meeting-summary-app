@@ -13,7 +13,7 @@ services:
       - meeting-summary-internal-dev
       - infra
     ports:
-      - "3001:3001"
+      - "3002:3001"
 
   frontend:
     image: ghcr.io/wisdom-youth-mlpe/meeting-summary-frontend:dev
