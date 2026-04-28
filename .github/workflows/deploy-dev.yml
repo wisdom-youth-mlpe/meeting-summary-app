@@ -127,16 +127,22 @@ jobs:
             # Login to GHCR
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u fahizkp --password-stdin
 
-            # Pull dev images
+            # Pull the LATEST dev images explicitly
             docker pull ghcr.io/wisdom-youth-mlpe/meeting-summary-frontend:dev
             docker pull ghcr.io/wisdom-youth-mlpe/meeting-summary-backend:dev
 
-            # Stop and remove old containers if exist
-            docker rm -f meeting-summary-backend-dev meeting-summary-frontend-dev || true
+            # Log what we just pulled for verification
+            echo "=== Pulled frontend image digest ==="
+            docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/wisdom-youth-mlpe/meeting-summary-frontend:dev
+
+            # Stop and remove old containers
             docker compose -f docker-compose.dev.yml down --remove-orphans || true
 
-            # Start the new containers
-            docker compose -f docker-compose.dev.yml up -d
+            # Start fresh containers - force recreate with the new image
+            docker compose -f docker-compose.dev.yml up -d --force-recreate --pull always
 
-            # Clean up old images
+            echo "=== Running containers ==="
+            docker ps --filter "name=meeting-summary" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
+
+            # Clean up dangling images only (not tagged ones)
             docker image prune -f
