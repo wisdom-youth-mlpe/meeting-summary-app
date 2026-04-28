@@ -77,7 +77,7 @@ const BottomNavigation = () => {
         tabs.push({
             id: 'report',
             path: '/report',
-            label: 'ഹിസ്റ്ററി',
+            label: 'റിപ്പോർട്ടുകൾ',
             icon: Icons.Report,
         });
     }

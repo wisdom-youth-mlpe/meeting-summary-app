@@ -458,7 +458,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
                       fontSize: '14px'
                     }}
                   >
-                    View
+                    റിപ്പോർട്ട്
                   </button>
                   {canEdit(meeting) && (
                     <>

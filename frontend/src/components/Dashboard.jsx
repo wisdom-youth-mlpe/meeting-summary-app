@@ -446,7 +446,7 @@ const Dashboard = () => {
                                                     onClick={() => handleViewReport(meeting.meetingId)}
                                                     disabled={reportLoading}
                                                 >
-                                                    {reportLoading ? 'Loading...' : 'View'}
+                                                    {reportLoading ? 'Loading...' : 'റിപ്പോർട്ട്'}
                                                 </button>
                                             </td>
                                         </tr>
