@@ -4,6 +4,7 @@ const { authenticate } = require('../middleware/auth');
 const { isMongoConnected } = require('../config/mongodb');
 const mongoService = require('../services/mongoService');
 const { hasZoneAccess, getAccessibleZones } = require('../middleware/checkZoneAccess');
+const { requireRole } = require('../middleware/authorize');
 
 // Apply authentication middleware to all routes except debug
 router.use((req, res, next) => {
