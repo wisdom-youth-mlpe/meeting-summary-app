@@ -80,12 +80,18 @@ const Dashboard = () => {
         const currentTargetDay = targetDay !== null ? targetDay : meetingDay;
 
         if (filterType === 'week') {
-            // Week runs from configured day to configured day - 1
             // day: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
             const day = today.getDay();
-            // days since last target day
-            const diff = (day - currentTargetDay + 7) % 7;
-            start.setDate(today.getDate() - diff);
+            
+            if (day === currentTargetDay) {
+                // If today is the meeting day, we are showing the week that just finished
+                start.setDate(today.getDate() - 7);
+                end.setDate(today.getDate() - 1);
+            } else {
+                // days since last target day
+                const diff = (day - currentTargetDay + 7) % 7;
+                start.setDate(today.getDate() - diff);
+            }
         } else if (filterType === 'month') {
             start.setDate(1); // 1st of month
         } else if (filterType === 'custom') {
@@ -152,6 +158,12 @@ const Dashboard = () => {
             month: 'short',
             day: 'numeric'
         });
+    };
+
+    const formatDateShort = (d) => {
+        if (!d) return '';
+        const date = typeof d === 'string' ? new Date(d) : d;
+        return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     };
 
     // --- Renderers ---
@@ -714,16 +726,29 @@ const Dashboard = () => {
                     </span>
                 )}
             </div>
-            {dateFilter === 'week' && stats?.currentWeek && (
-                <h4 className="week-subtitle">
-                    Week {stats.currentWeek} 
-                    <span style={{ fontWeight: 'normal', marginLeft: '10px', color: '#666', fontSize: '0.9rem' }}>
-                        ({formatDate(startDate)} - {formatDate(endDate)})
-                    </span>
-                </h4>
+            {dateFilter === 'week' && (
+                <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+                    <div style={{ 
+                        fontSize: '0.9rem', 
+                        color: 'var(--primary)', 
+                        fontWeight: '700',
+                        background: 'var(--primary-light)',
+                        display: 'inline-block',
+                        padding: '6px 16px',
+                        borderRadius: '20px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                    }}>
+                        📅 Reporting Week: {formatDateShort(startDate)} - {formatDateShort(endDate)}
+                    </div>
+                    {stats?.currentWeek && (
+                        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
+                            Week {stats.currentWeek}
+                        </div>
+                    )}
+                </div>
             )}
             {dateFilter === 'month' && (
-                <h4 className="week-subtitle">
+                <h4 className="week-subtitle" style={{ textAlign: 'center' }}>
                     {new Date().toLocaleString('ml-IN', { month: 'long' })}
                 </h4>
             )}

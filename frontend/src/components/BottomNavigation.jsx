@@ -67,7 +67,7 @@ const BottomNavigation = () => {
         tabs.push({
             id: 'form',
             path: '/form',
-            label: 'റിപ്പോർട്ട് ചെയ്യുക',
+            label: 'റിപ്പോർട്ട്',
             icon: Icons.Form,
         });
     }
@@ -158,7 +158,7 @@ const BottomNavigation = () => {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '4px',
-            padding: '8px 12px',
+            padding: '8px 4px',
             cursor: 'pointer',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             color: active ? 'var(--primary)' : 'var(--gray-400)',
@@ -177,7 +177,7 @@ const BottomNavigation = () => {
             filter: active ? 'drop-shadow(0 0 8px rgba(163, 230, 53, 0.4))' : 'none',
         }),
         label: (active) => ({
-            fontSize: '0.65rem',
+            fontSize: '0.55rem',
             fontWeight: active ? '800' : '500',
             transition: 'all 0.4s ease',
             whiteSpace: 'nowrap',
