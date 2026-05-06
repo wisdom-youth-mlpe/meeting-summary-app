@@ -12,8 +12,8 @@ const MeetingMinutes = ({ minutes, onMinutesChange, onAddMinute, onRemoveMinute 
 
   const styles = {
     minuteCard: {
-      marginBottom: '12px',
-      padding: '16px',
+      marginBottom: '8px',
+      padding: '12px',
       background: '#ffffff',
       border: '2px solid #e0e0e0',
       borderRadius: '14px',
@@ -41,13 +41,13 @@ const MeetingMinutes = ({ minutes, onMinutesChange, onAddMinute, onRemoveMinute 
     },
     textarea: {
       width: '100%',
-      padding: '12px 16px',
+      padding: '10px 14px',
       border: '2px solid #e0e0e0',
       borderRadius: '12px',
       fontSize: '0.95rem',
       fontFamily: 'inherit',
       resize: 'vertical',
-      minHeight: '80px',
+      minHeight: '60px',
       transition: 'all 0.2s ease',
     },
     buttonGroup: {

@@ -13,7 +13,7 @@ const Dashboard = () => {
     // Filters
     const [selectedZone, setSelectedZone] = useState('All');
     const [zonesList, setZonesList] = useState([]);
-    const [dateFilter, setDateFilter] = useState('week'); // week, month, custom
+    const [dateFilter, setDateFilter] = useState('week'); // 7days, week, month, custom
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
@@ -79,7 +79,9 @@ const Dashboard = () => {
         
         const currentTargetDay = targetDay !== null ? targetDay : meetingDay;
 
-        if (filterType === 'week') {
+        if (filterType === '7days') {
+            start.setDate(today.getDate() - 7);
+        } else if (filterType === 'week') {
             // day: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
             const day = today.getDay();
             
@@ -91,6 +93,7 @@ const Dashboard = () => {
                 // days since last target day
                 const diff = (day - currentTargetDay + 7) % 7;
                 start.setDate(today.getDate() - diff);
+                // end remains today
             }
         } else if (filterType === 'month') {
             start.setDate(1); // 1st of month
@@ -99,9 +102,14 @@ const Dashboard = () => {
             return;
         }
 
-        const formatDate = (d) => d.toISOString().split('T')[0];
-        setStartDate(formatDate(start));
-        setEndDate(formatDate(end));
+        const formatDateLocal = (d) => {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        setStartDate(formatDateLocal(start));
+        setEndDate(formatDateLocal(end));
     };
 
     const handleDateFilterChange = (filter) => {
@@ -171,35 +179,65 @@ const Dashboard = () => {
     const CollapsibleCard = ({ title, children, defaultExpanded = true, className = "" }) => {
         const [isExpanded, setIsExpanded] = useState(defaultExpanded);
         return (
-            <div className={`card ${className}`} style={{ marginBottom: '16px', padding: 0, overflow: 'hidden' }}>
+            <div className={`card ${className}`} style={{ 
+                marginBottom: '10px', 
+                padding: 0, 
+                overflow: 'hidden',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                border: isExpanded ? '1px solid var(--primary-light)' : '1px solid rgba(0,0,0,0.05)',
+                boxShadow: isExpanded ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
+            }}>
                 <div 
                     onClick={() => setIsExpanded(!isExpanded)} 
                     style={{ 
-                        padding: '16px 20px', 
+                        padding: '12px 20px', 
                         display: 'flex', 
                         justifyContent: 'space-between', 
                         alignItems: 'center', 
                         cursor: 'pointer',
                         background: isExpanded ? 'var(--gray-50)' : 'white',
-                        borderBottom: isExpanded ? '1px solid #eee' : 'none',
-                        transition: 'background 0.2s'
+                        transition: 'background 0.3s ease'
                     }}
                 >
-                    <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#2c3e50' }}>{title}</h3>
-                    <span style={{ 
-                        fontSize: '1.2rem', 
-                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.2s ease',
-                        color: '#666'
+                    <h3 style={{ 
+                        margin: 0, 
+                        fontSize: '0.95rem', 
+                        color: '#2c3e50',
+                        fontWeight: isExpanded ? '700' : '600'
+                    }}>{title}</h3>
+                    <div style={{ 
+                        width: '24px',
+                        height: '24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '50%',
+                        background: isExpanded ? 'var(--primary-light)' : 'transparent',
+                        transition: 'all 0.3s ease'
                     }}>
-                        ▼
-                    </span>
-                </div>
-                {isExpanded && (
-                    <div style={{ padding: '20px', animation: 'fadeIn 0.3s ease' }}>
-                        {children}
+                        <span style={{ 
+                            fontSize: '0.8rem', 
+                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            color: isExpanded ? 'var(--primary)' : '#999',
+                            display: 'inline-block'
+                        }}>
+                            ▼
+                        </span>
                     </div>
-                )}
+                </div>
+                <div style={{ 
+                    display: 'grid',
+                    gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                    transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    background: 'white'
+                }}>
+                    <div style={{ overflow: 'hidden' }}>
+                        <div style={{ padding: '16px 20px' }}>
+                            {children}
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     };
@@ -209,6 +247,10 @@ const Dashboard = () => {
             <div className="control-group">
                 <label>Date Range:</label>
                 <div className="btn-group">
+                    <button
+                        className={dateFilter === '7days' ? 'active' : ''}
+                        onClick={() => handleDateFilterChange('7days')}
+                    >7 Days</button>
                     <button
                         className={dateFilter === 'week' ? 'active' : ''}
                         onClick={() => handleDateFilterChange('week')}
@@ -273,7 +315,7 @@ const Dashboard = () => {
         const overallPct = grandTotal > 0 ? ((totalPresent / grandTotal) * 100).toFixed(1) : 0;
 
         // Time period label based on filter
-        const periodLabel = dateFilter === 'month' ? 'ഈ മാസം' : 'ഈ ആഴ്ച';
+        const periodLabel = dateFilter === 'month' ? 'ഈ മാസം' : (dateFilter === '7days' ? 'കഴിഞ്ഞ 7 ദിവസം' : 'ഈ ആഴ്ച');
 
         // All Zones View - Show simplified dashboard
         if (selectedZone === 'All') {
@@ -340,7 +382,7 @@ const Dashboard = () => {
                             const ed = new Date(e + 'T00:00:00');
                             return `(${sd.toLocaleDateString('ml-IN', opts)} - ${ed.toLocaleDateString('ml-IN', opts)})`;
                         };
-                        const dateRange = dateFilter === 'week' ? fmtRange(startDate, endDate) : '';
+                        const dateRange = (dateFilter === 'week' || dateFilter === '7days') ? fmtRange(startDate, endDate) : '';
                         const whatsappMsg =
                             `ഈ ആഴ്ചയിൽ മീറ്റിംഗ് കൂടിയ മണ്ഡലങ്ങൾ ${dateRange}\n${withList || 'ഒന്നുമില്ല'}\n\nഈ ആഴ്ചയിൽ മീറ്റിംഗ് കൂടാത്ത മണ്ഡലങ്ങൾ\n${withoutList || 'ഒന്നുമില്ല'}`;
                         const handleCopyWhatsApp = () => {
@@ -388,8 +430,8 @@ const Dashboard = () => {
                         )}
                     </CollapsibleCard>
 
-                    {/* QHLS Missing Branches - Only show for week filter */}
-                    {dateFilter === 'week' && (
+                    {/* QHLS Missing Branches - Only show for week/7days filter */}
+                    {(dateFilter === 'week' || dateFilter === '7days') && (
                         <CollapsibleCard 
                             className="full-width"
                             title="QHLS നടക്കാത്ത ശാഖകൾ"
@@ -726,7 +768,7 @@ const Dashboard = () => {
                     </span>
                 )}
             </div>
-            {dateFilter === 'week' && (
+            {(dateFilter === 'week' || dateFilter === '7days') && (
                 <div style={{ marginBottom: '24px', textAlign: 'center' }}>
                     <div style={{ 
                         fontSize: '0.9rem', 

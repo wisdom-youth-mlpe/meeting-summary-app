@@ -1317,7 +1317,7 @@ const MeetingForm = () => {
         />
 
         {/* Meeting Roles Section */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px' }}>
           <div className="form-group">
             <label htmlFor="swagatham">സ്വാഗതം: <span style={{ color: 'red' }}>*</span></label>
             <select
