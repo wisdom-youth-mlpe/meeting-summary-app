@@ -57,10 +57,10 @@
   /* Spacing */
   --space-xs: 4px;
   --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
+  --space-md: 12px;
+  --space-lg: 18px;
+  --space-xl: 24px;
+  --space-2xl: 36px;
 }
 
 body {
@@ -85,9 +85,10 @@ body {
   max-width: 800px;
   margin: 0 auto;
   background: var(--white);
-  padding: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 @media (max-width: 640px) {
@@ -158,28 +159,38 @@ h3 {
    Form Groups & Labels
    ====================================== */
 .form-group {
-  margin-bottom: var(--space-lg);
-  background: var(--gray-50);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--gray-200);
+  margin-bottom: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--white);
+  border: 1.5px solid #EEF2FF;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.form-group:focus-within {
+  border-color: #c7d7fd;
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.09);
 }
 
 label {
-  display: block;
-  margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
   font-weight: 600;
-  color: var(--gray-700);
-  font-size: 0.95rem;
+  color: var(--gray-500);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 @media (max-width: 640px) {
   .form-group {
-    padding: var(--space-sm) var(--space-md);
+    padding: 8px 12px;
   }
 
   label {
-    font-size: 0.9rem;
+    font-size: 0.72rem;
   }
 }
 
@@ -194,16 +205,28 @@ input[type="number"],
 select,
 textarea {
   width: 100%;
-  padding: var(--space-md);
-  border: 2px solid var(--gray-200);
-  border-radius: var(--radius-md);
-  font-size: 1rem;
+  padding: 9px 12px;
+  border: 1.5px solid #e8ecf4;
+  border-radius: 10px;
+  font-size: 0.95rem;
   font-family: inherit;
-  background: var(--white);
+  background: #fafbff;
   color: var(--gray-800);
   transition: all 0.2s ease;
   -webkit-appearance: none;
   appearance: none;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+}
+
+input[type="text"]:hover,
+input[type="password"]:hover,
+input[type="date"]:hover,
+input[type="time"]:hover,
+input[type="number"]:hover,
+select:hover,
+textarea:hover {
+  border-color: #c7d7fd;
+  background: #fff;
 }
 
 input[type="text"]:focus,
@@ -215,41 +238,48 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.15);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), inset 0 1px 2px rgba(0,0,0,0.02);
 }
 
 input[type="text"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
 textarea::placeholder {
-  color: var(--gray-400);
+  color: #c0c8d8;
+  font-style: italic;
+  font-size: 0.9rem;
 }
 
 select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%233B82F6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2393a4c4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 20px;
-  padding-right: 44px;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 36px;
   cursor: pointer;
 }
 
 textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 80px;
+  line-height: 1.6;
 }
 
 @media (max-width: 640px) {
-
   input[type="text"],
+  input[type="password"],
   input[type="date"],
   input[type="time"],
   input[type="number"],
   select,
   textarea {
-    padding: var(--space-sm) var(--space-md);
-    font-size: 16px;
-    /* Prevents zoom on iOS */
+    padding: 8px 12px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: 10px;
   }
 }
+
 
 /* ======================================
    Buttons
@@ -258,32 +288,34 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
+  gap: 6px;
+  padding: 9px 20px;
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: var(--white);
   border: none;
-  border-radius: var(--radius-md);
-  font-size: 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
   font-family: inherit;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+  letter-spacing: 0.01em;
 }
 
 button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 button:active {
   transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.2);
 }
 
 button:disabled {
-  background: var(--gray-300);
-  color: var(--gray-500);
+  background: var(--gray-200);
+  color: var(--gray-400);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -291,26 +323,30 @@ button:disabled {
 
 .btn-secondary {
   background: linear-gradient(135deg, var(--gray-500), var(--gray-600));
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .btn-secondary:hover {
   background: linear-gradient(135deg, var(--gray-600), var(--gray-700));
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 .btn-danger {
   background: linear-gradient(135deg, var(--danger), #b91c1c);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
 }
 
 .btn-danger:hover {
-  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);
 }
 
 .btn-success {
   background: linear-gradient(135deg, var(--secondary), #15803d);
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.25);
 }
 
 .btn-success:hover {
-  background: linear-gradient(135deg, #00a884, #008f6f);
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.35);
 }
 
 @media (max-width: 640px) {

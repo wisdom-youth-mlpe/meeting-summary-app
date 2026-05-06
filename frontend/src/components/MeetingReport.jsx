@@ -412,6 +412,16 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   };
 
+  const formatDateDisplay = (dateString) => {
+    if (!dateString) return '-';
+    // dateString is YYYY-MM-DD
+    const date = new Date(dateString + 'T00:00:00');
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = date.toLocaleDateString('en-IN', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   const renderMeetingsTable = (meetingList) => (
     <div style={{ overflowX: 'auto', marginBottom: '32px' }}>
       <table style={{
@@ -423,9 +433,9 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
         <thead>
           <tr style={{ backgroundColor: '#3498db', color: '#fff' }}>
             <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>S.No</th>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Saved Date</th>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>മണ്ഡലം (Zone)</th>
             <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Meeting Date</th>
+            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>മണ്ഡലം (Zone)</th>
+            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Saved Date</th>
             <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Actions</th>
           </tr>
         </thead>
@@ -436,13 +446,13 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
             }}>
               <td style={{ padding: '12px', border: '1px solid #ddd' }}>{index + 1}</td>
               <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                {formatDate(meeting.savedDate)}
+                {formatDateDisplay(meeting.date)}
               </td>
               <td style={{ padding: '12px', border: '1px solid #ddd' }}>
                 {meeting.zoneName || '-'}
               </td>
               <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                {meeting.date || '-'}
+                {formatDate(meeting.savedDate)}
               </td>
               <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
