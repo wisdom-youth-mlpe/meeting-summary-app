@@ -445,45 +445,29 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     </div>
   );
 
-  // Table on wide screens, one card per meeting on phones
+  // One collapsed card per meeting; the actions open on tap
   const renderMeetingsTable = (meetingList) => (
-    <>
-      <table className="report-table">
-        <thead>
-          <tr>
-            <th>S.No</th>
-            <th>Meeting Date</th>
-            <th>മണ്ഡലം (Zone)</th>
-            <th>Saved Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {meetingList.map((meeting, index) => (
-            <tr key={meeting.meetingId}>
-              <td className="nums">{index + 1}</td>
-              <td className="nums">{formatDateDisplay(meeting.date)}</td>
-              <td>{meeting.zoneName || '-'}</td>
-              <td className="nums">{formatDate(meeting.savedDate)}</td>
-              <td>{renderActions(meeting)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <ol className="report-cards">
-        {meetingList.map((meeting) => (
-          <li key={meeting.meetingId} className="meeting-card">
-            <div className="meeting-card-top">
-              <span className="meeting-card-zone">{meeting.zoneName || '-'}</span>
-              <span className="meeting-card-date nums">{formatDateDisplay(meeting.date)}</span>
-            </div>
-            <span className="meeting-card-saved nums">Saved Date: {formatDate(meeting.savedDate)}</span>
+    <ol className="report-cards">
+      {meetingList.map((meeting) => (
+        <li key={meeting.meetingId}>
+          <details className="report-card">
+            <summary>
+              <span className="report-card-text">
+                <span className="report-card-date nums">{formatDateDisplay(meeting.date)}</span>
+                <span className="report-card-meta">
+                  <span className="nums">Saved {formatDate(meeting.savedDate)}</span>
+                  {meeting.zoneName && <span> · {meeting.zoneName}</span>}
+                </span>
+              </span>
+              <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
             {renderActions(meeting)}
-          </li>
-        ))}
-      </ol>
-    </>
+          </details>
+        </li>
+      ))}
+    </ol>
   );
 
   const CollapsibleSection = ({ title, children, defaultExpanded = true }) => (
@@ -513,41 +497,53 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
 
       {!selectedReport ? (
         <>
-          <div className="filter-bar">
-            <div className="filter-search">
-              <label htmlFor="report-search">Search Zone or Date</label>
-              <input
-                id="report-search"
-                type="text"
-                placeholder="മണ്ഡലം അല്ലെങ്കിൽ തീയതി തിരയുക..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+          <details className="filter-panel" open={Boolean(searchTerm || filterDate)}>
+            <summary>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              Filter
+              {(searchTerm || filterDate) && <span className="filter-dot" aria-label="Filter on" />}
+              <svg className="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div className="filter-bar">
+              <div className="filter-search">
+                <label htmlFor="report-search">Search Zone or Date</label>
+                <input
+                  id="report-search"
+                  type="text"
+                  placeholder="മണ്ഡലം അല്ലെങ്കിൽ തീയതി തിരയുക..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
 
-            <div className="filter-date">
-              <label htmlFor="report-date">Pick Specific Date</label>
-              <input
-                id="report-date"
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-              />
-            </div>
+              <div className="filter-date">
+                <label htmlFor="report-date">Pick Specific Date</label>
+                <input
+                  id="report-date"
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                />
+              </div>
 
-            {(searchTerm || filterDate) && (
-              <button
-                type="button"
-                className="btn-quiet"
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterDate('');
-                }}
-              >
-                ✕ Clear All
-              </button>
-            )}
-          </div>
+              {(searchTerm || filterDate) && (
+                <button
+                  type="button"
+                  className="btn-quiet"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterDate('');
+                  }}
+                >
+                  ✕ Clear All
+                </button>
+              )}
+            </div>
+          </details>
 
           {filteredMeetings.length === 0 ? (
             <div className="empty-note">
