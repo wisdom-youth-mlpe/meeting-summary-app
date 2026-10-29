@@ -900,3 +900,258 @@ button:disabled {
 .bottom-nav-tab.active span::after {
   background: var(--paddy);
 }
+
+/* ======================================
+   Shared list pieces
+   ====================================== */
+.row-num {
+  flex-shrink: 0;
+  min-width: 18px;
+  color: var(--paddy);
+  font-weight: 700;
+}
+
+.icon-btn {
+  min-width: var(--tap);
+  padding: 0;
+  background: transparent;
+  color: var(--stone);
+}
+
+.icon-btn:hover {
+  background: var(--mist);
+  color: var(--rust);
+}
+
+.empty-note {
+  padding: var(--space-md) var(--space-lg);
+  color: var(--stone);
+  border: 1.5px dashed var(--edge);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+/* Minutes: the textarea sits flush inside the row */
+.minute-row {
+  align-items: flex-start;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.minute-row .row-num {
+  padding-top: 12px;
+}
+
+.minute-row textarea {
+  flex: 1;
+  min-height: 52px;
+  padding-left: 4px;
+}
+
+/* Dashed "add another" row */
+.add-row {
+  width: 100%;
+  background: transparent;
+  color: var(--paddy-deep);
+  border: 1.5px dashed var(--edge);
+}
+
+.add-row:hover {
+  background: var(--surface);
+  border-color: var(--paddy);
+}
+
+.add-row:disabled {
+  background: transparent;
+  color: var(--gray-400);
+  border-color: var(--edge);
+}
+
+/* Attendance: leave details drop below the row */
+.attendee-row {
+  flex-wrap: wrap;
+}
+
+.attendee-row .row-name {
+  flex: 1;
+}
+
+.leave-detail {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 6px 6px 0;
+}
+
+.leave-detail input[type="text"] {
+  background: var(--clay-wash);
+}
+
+label.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0;
+  color: var(--slate);
+  font-weight: 500;
+  font-size: 0.95rem;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+label.check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--clay);
+}
+
+/* Collapsible "add extra attendee" */
+.add-extra {
+  margin-top: var(--space-sm);
+}
+
+.add-extra summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--tap);
+  color: var(--paddy-deep);
+  font-weight: 600;
+  border: 1.5px dashed var(--edge);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  list-style: none;
+}
+
+.add-extra summary::-webkit-details-marker {
+  display: none;
+}
+
+.add-extra[open] summary {
+  border-style: solid;
+  border-color: var(--paddy);
+  margin-bottom: var(--space-sm);
+}
+
+.add-extra-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-sm);
+  align-items: end;
+}
+
+@media (max-width: 640px) {
+  .add-extra-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field-note {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--stone);
+}
+
+.loading-note::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+  border: 2px solid var(--edge);
+  border-top-color: var(--paddy);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  vertical-align: middle;
+}
+
+.req {
+  color: var(--rust);
+}
+
+.form-row-2,
+.form-row-3 {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.form-row-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.form-row-3 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.saving-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  background: rgba(38, 50, 58, 0.75);
+  color: var(--surface);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.saving-spinner {
+  width: 52px;
+  height: 52px;
+  border: 5px solid rgba(255, 255, 255, 0.25);
+  border-top-color: var(--paddy);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* QHLS rows: three choices must fit beside long unit names on a phone */
+.qhls-row {
+  flex-wrap: wrap;
+}
+
+.qhls-row .row-name {
+  flex: 1 1 120px;
+}
+
+.qhls-row .toggle button {
+  min-width: 0;
+  padding: 0 9px;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 400px) {
+  .qhls-row .toggle {
+    flex-basis: 100%;
+  }
+
+  .qhls-row .toggle button {
+    flex: 1;
+  }
+}
+
+.qhls-hidden {
+  margin-top: var(--space-sm);
+}
+
+.qhls-hidden-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-sm);
+}
+
+.qhls-hidden-list button {
+  background: var(--surface);
+  color: var(--slate);
+  font-weight: 500;
+  padding: 0 14px;
+}
+
+.qhls-hidden-list button:hover {
+  background: var(--paddy-wash);
+}
