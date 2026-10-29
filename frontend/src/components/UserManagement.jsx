@@ -230,7 +230,7 @@ const UserManagement = () => {
                             borderRadius: '8px',
                             cursor: 'pointer',
                             fontFamily: 'Anek Malayalam',
-                            fontSize: '16px',
+                            fontSize: '0.95rem',
                         }}
                     >
                         + New User
@@ -264,7 +264,7 @@ const UserManagement = () => {
                                     padding: '10px',
                                     borderRadius: '8px',
                                     border: '1px solid var(--edge)',
-                                    fontSize: '16px',
+                                    fontSize: '0.95rem',
                                 }}
                             />
                         </div>
@@ -283,7 +283,7 @@ const UserManagement = () => {
                                     padding: '10px',
                                     borderRadius: '8px',
                                     border: '1px solid var(--edge)',
-                                    fontSize: '16px',
+                                    fontSize: '0.95rem',
                                 }}
                             />
                         </div>
@@ -485,7 +485,7 @@ const UserManagement = () => {
                                     borderRadius: '8px',
                                     cursor: 'pointer',
                                     fontFamily: 'Anek Malayalam',
-                                    fontSize: '16px',
+                                    fontSize: '0.95rem',
                                     fontWeight: '600',
                                 }}
                             >
@@ -502,7 +502,7 @@ const UserManagement = () => {
                                     borderRadius: '8px',
                                     cursor: 'pointer',
                                     fontFamily: 'Anek Malayalam',
-                                    fontSize: '16px',
+                                    fontSize: '0.95rem',
                                 }}
                             >
                                 Cancel

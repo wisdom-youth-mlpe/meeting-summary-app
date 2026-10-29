@@ -948,7 +948,7 @@ const Dashboard = () => {
                     border-radius: 4px;
                     border: 1px solid var(--edge);
                     min-width: 150px;
-                    font-size: 1rem;
+                    font-size: 0.95rem;
                 }
                 .dashboard-grid {
                     display: grid;
@@ -1085,7 +1085,7 @@ const Dashboard = () => {
                 }
                 .back-button {
                   color: var(--slate);
-                  font-size: 16px;
+                  font-size: 0.95rem;
                   font-weight: 600;
                   background: transparent;
                   border: none;

@@ -120,7 +120,7 @@ const MeetingDayConfig = () => {
                         marginTop: '32px', 
                         width: '100%', 
                         padding: '16px',
-                        fontSize: '1rem'
+                        fontSize: '0.95rem'
                     }}
                 >
                     {saving ? 'Saving...' : 'Save Settings'}
