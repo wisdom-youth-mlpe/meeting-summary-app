@@ -124,13 +124,13 @@ const AttendeeList = ({ attendees, attendance, onAttendanceChange, onAbsenceReas
             />
           </div>
           <div>
-            <label htmlFor="extra-role">റോൾ</label>
+            <label htmlFor="extra-role">ഭാരവാഹിത്വം</label>
             <input
               id="extra-role"
               type="text"
               value={extraRole}
               onChange={(e) => setExtraRole(e.target.value)}
-              placeholder="റോൾ എഴുതുക"
+              placeholder="ഭാരവാഹിത്വം എഴുതുക"
             />
           </div>
           <button
