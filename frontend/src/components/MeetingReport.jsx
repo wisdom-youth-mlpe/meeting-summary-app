@@ -427,21 +427,6 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
       <button type="button" onClick={() => handleView(meeting.meetingId)}>
         റിപ്പോർട്ട്
       </button>
-      {canEdit(meeting) && (
-        <>
-          <button type="button" className="btn-secondary" onClick={() => handleEdit(meeting.meetingId)}>
-            Edit
-          </button>
-          <button
-            type="button"
-            className="btn-quiet danger"
-            onClick={() => handleDelete(meeting.meetingId)}
-            disabled={deletingId === meeting.meetingId}
-          >
-            {deletingId === meeting.meetingId ? 'Deleting...' : 'Delete'}
-          </button>
-        </>
-      )}
     </div>
   );
 
@@ -457,13 +442,15 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
                   <span className="report-card-zone">{meeting.zoneName || '-'}</span>
                   <span className="report-card-date nums">{formatDateDisplay(meeting.date)}</span>
                 </span>
-                <span className="report-card-meta nums">Saved {formatDate(meeting.savedDate)}</span>
               </span>
               <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </summary>
-            {renderActions(meeting)}
+            <div className="report-card-body">
+              <span className="report-card-meta nums">Saved {formatDate(meeting.savedDate)}</span>
+              {renderActions(meeting)}
+            </div>
           </details>
         </li>
       ))}

@@ -1246,15 +1246,26 @@ label.check input {
 .report-card-text {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-width: 0;
 }
 
 .report-card-title {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: baseline;
-  column-gap: var(--space-sm);
+  gap: var(--space-sm);
   font-size: 1.05rem;
+}
+
+.report-card-zone {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.report-card-title .report-card-date {
+  flex-shrink: 0;
+  color: var(--stone);
 }
 
 .report-card-zone {
@@ -1274,7 +1285,7 @@ label.check input {
 .filter-panel .chevron {
   flex-shrink: 0;
   color: var(--stone);
-  transition: transform 0.15s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .report-card[open] .chevron,
@@ -1282,12 +1293,16 @@ label.check input {
   transform: rotate(180deg);
 }
 
-.report-card .meeting-actions {
-  padding: 0 14px 12px;
+.report-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--mist);
 }
 
 .report-card .meeting-actions button {
-  flex: 1;
+  width: 100%;
 }
 
 /* Collapsed filter panel */
@@ -1362,7 +1377,7 @@ label.check input {
 
 .collapsible .chevron {
   color: var(--stone);
-  transition: transform 0.15s ease;
+  transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 .collapsible[open] .chevron {
@@ -1539,4 +1554,65 @@ label.check input {
 input[type="radio"],
 input[type="checkbox"] {
   accent-color: var(--paddy);
+}
+
+/* ======================================
+   Expand / collapse motion
+   Height glides where the browser supports animating to auto;
+   contents fade and settle everywhere
+   ====================================== */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+.report-card::details-content,
+.filter-panel::details-content,
+.collapsible::details-content,
+.add-extra::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition:
+    block-size 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    content-visibility 0.28s allow-discrete;
+}
+
+.report-card[open]::details-content,
+.filter-panel[open]::details-content,
+.collapsible[open]::details-content,
+.add-extra[open]::details-content {
+  block-size: auto;
+}
+
+.report-card[open] .report-card-body,
+.filter-panel[open] .filter-bar,
+.collapsible[open] .collapsible-body,
+.collapsible[open] .dash-collapsible-body,
+.add-extra[open] .add-extra-fields {
+  animation: settle-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A small press response on the tappable headers */
+.report-card summary,
+.filter-panel summary,
+.collapsible summary,
+.add-extra summary {
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.report-card summary:active,
+.filter-panel summary:active,
+.collapsible summary:active,
+.add-extra summary:active {
+  transform: scale(0.99);
 }
