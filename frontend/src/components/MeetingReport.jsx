@@ -448,7 +448,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
   // Table on wide screens, one card per meeting on phones
   const renderMeetingsTable = (meetingList) => (
     <>
-      <table className="meetings-table">
+      <table className="report-table">
         <thead>
           <tr>
             <th>S.No</th>
@@ -471,7 +471,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
         </tbody>
       </table>
 
-      <ol className="meeting-cards">
+      <ol className="report-cards">
         {meetingList.map((meeting) => (
           <li key={meeting.meetingId} className="meeting-card">
             <div className="meeting-card-top">

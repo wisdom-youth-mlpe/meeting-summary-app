@@ -205,7 +205,7 @@ const ZoneManagement = () => {
                                     </button>
                                     <button 
                                         className="btn btn-danger" 
-                                        style={{ padding: '4px 12px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px' }}
+                                        style={{ padding: '4px 12px', background: 'var(--rust)', color: 'white', border: 'none', borderRadius: '4px' }}
                                         onClick={() => handleDelete(zone.id, zone.name)}
                                     >
                                         Delete

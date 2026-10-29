@@ -80,7 +80,7 @@ function QHLSDashboard() {
             {!loading && dashboardData && (
                 <>
                     {/* Week Info */}
-                    <div style={{ padding: '12px 16px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
+                    <div className="week-subtitle nums">
                         {formatDateRange()}
                     </div>
 
@@ -136,6 +136,7 @@ function QHLSDashboard() {
                             {/* Filter and Refresh Bar */}
                             <div className="qhls-actions-bar">
                                 <select
+                                    aria-label="മണ്ഡലം"
                                     className="qhls-zone-filter"
                                     value={zoneFilter}
                                     onChange={(e) => setZoneFilter(e.target.value)}
@@ -145,8 +146,13 @@ function QHLSDashboard() {
                                         <option key={zone} value={zone}>{zone}</option>
                                     ))}
                                 </select>
-                                <button onClick={fetchDashboardData} className="qhls-refresh-btn" disabled={loading}>
-                                    {loading ? '...' : '🔄'}
+                                <button onClick={fetchDashboardData} className="qhls-refresh-btn" disabled={loading} aria-label="Refresh">
+                                    {loading ? '...' : (
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                            <polyline points="23 4 23 10 17 10" />
+                                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                                        </svg>
+                                    )}
                                 </button>
                             </div>
 
@@ -163,6 +169,10 @@ function QHLSDashboard() {
                                             <div key={zone} className="qhls-zone-group">
                                                 <div 
                                                     className={`qhls-zone-header-card ${expandedZones[zone] ? 'expanded' : ''}`}
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    aria-expanded={!!expandedZones[zone]}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedZones(prev => ({ ...prev, [zone]: !prev[zone] })); } }}
                                                     onClick={() => setExpandedZones(prev => ({ ...prev, [zone]: !prev[zone] }))}
                                                 >
                                                     <div className="qhls-zone-info">
@@ -170,7 +180,9 @@ function QHLSDashboard() {
                                                         <span className="qhls-zone-count">{units.length} ശാഖകൾ</span>
                                                     </div>
                                                     <div className="qhls-zone-toggle">
-                                                        {expandedZones[zone] ? '🔼' : '🔽'}
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: expandedZones[zone] ? 'rotate(180deg)' : 'none' }}>
+                                                            <polyline points="6 9 12 15 18 9" />
+                                                        </svg>
                                                     </div>
                                                 </div>
 
@@ -180,7 +192,7 @@ function QHLSDashboard() {
                                                             <div key={idx} className="qhls-unit-row-card">
                                                                 <div className="qhls-unit-top">
                                                                     <div className="qhls-unit-name">{row.unit}</div>
-                                                                    <div className="qhls-unit-date">📅 {row.date} ({row.day})</div>
+                                                                    <div className="qhls-unit-date nums">{row.date} ({row.day})</div>
                                                                 </div>
                                                                 
                                                                 <div className="qhls-metrics-grid">
@@ -222,7 +234,7 @@ function QHLSDashboard() {
                         <div className="qhls-missing-container">
                             {Object.keys(dashboardData.missing.byZone).length === 0 ? (
                                 <div className="qhls-empty-state success">
-                                    🎉 എല്ലാ ശാഖകളും QHLS റിപ്പോർട്ട് ചെയ്തു!
+                                    എല്ലാ ശാഖകളും QHLS റിപ്പോർട്ട് ചെയ്തു!
                                 </div>
                             ) : (
                                 Object.entries(dashboardData.missing.byZone).map(([zone, units]) => (

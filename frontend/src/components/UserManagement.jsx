@@ -32,10 +32,10 @@ const UserManagement = () => {
     };
 
     const ROLE_COLORS = {
-        admin: { bg: '#dc3545', color: 'white' }, // Red
-        district_admin: { bg: '#0d6efd', color: 'white' }, // Blue
-        zone_admin: { bg: '#28a745', color: 'white' }, // Green
-        antigravity: { bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }, // Purple gradient
+        admin: { bg: 'var(--rust)', color: 'white' }, // Red
+        district_admin: { bg: 'var(--slate)', color: 'white' }, // Blue
+        zone_admin: { bg: 'var(--paddy)', color: 'white' }, // Green
+        antigravity: { bg: 'var(--slate)', color: 'white' }, // Purple gradient
     };
 
     // Check if a user is Anti-Gravity
@@ -263,7 +263,7 @@ const UserManagement = () => {
                                     width: '100%',
                                     padding: '10px',
                                     borderRadius: '8px',
-                                    border: '1px solid #ddd',
+                                    border: '1px solid var(--edge)',
                                     fontSize: '16px',
                                 }}
                             />
@@ -282,7 +282,7 @@ const UserManagement = () => {
                                     width: '100%',
                                     padding: '10px',
                                     borderRadius: '8px',
-                                    border: '1px solid #ddd',
+                                    border: '1px solid var(--edge)',
                                     fontSize: '16px',
                                 }}
                             />
@@ -290,7 +290,7 @@ const UserManagement = () => {
 
                         <div style={{ marginBottom: '16px' }}>
                             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
-                                Roles <span style={{ fontSize: '12px', color: '#666', fontWeight: 'normal' }}>(Priority: Admin &gt; District Admin &gt; Zone Admin)</span>
+                                Roles <span style={{ fontSize: '12px', color: 'var(--stone)', fontWeight: 'normal' }}>(Priority: Admin &gt; District Admin &gt; Zone Admin)</span>
                             </label>
                             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {['admin', 'district_admin', 'zone_admin'].map(role => (
@@ -299,9 +299,9 @@ const UserManagement = () => {
                                         alignItems: 'center',
                                         gap: '8px',
                                         padding: '8px 16px',
-                                        backgroundColor: formData.roles.includes(role) ? ROLE_COLORS[role].bg : '#f5f5f5',
-                                        color: formData.roles.includes(role) ? ROLE_COLORS[role].color : '#333',
-                                        border: formData.roles.includes(role) ? '2px solid transparent' : '2px solid #ddd',
+                                        backgroundColor: formData.roles.includes(role) ? ROLE_COLORS[role].bg : 'var(--gray-50)',
+                                        color: formData.roles.includes(role) ? ROLE_COLORS[role].color : 'var(--slate)',
+                                        border: formData.roles.includes(role) ? '2px solid transparent' : '2px solid var(--edge)',
                                         borderRadius: '20px',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
@@ -332,7 +332,7 @@ const UserManagement = () => {
                                         style={{
                                             padding: '10px',
                                             borderRadius: '8px',
-                                            border: '1px solid #ddd',
+                                            border: '1px solid var(--edge)',
                                             backgroundColor: 'white',
                                             cursor: 'pointer',
                                             display: 'flex',
@@ -341,7 +341,7 @@ const UserManagement = () => {
                                         }}
                                     >
                                         <span style={{
-                                            color: formData.zoneAccess.length > 0 ? '#333' : '#999',
+                                            color: formData.zoneAccess.length > 0 ? 'var(--slate)' : 'var(--stone)',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
@@ -366,7 +366,7 @@ const UserManagement = () => {
                                             right: 0,
                                             zIndex: 9999,
                                             backgroundColor: 'white',
-                                            border: '1px solid #ddd',
+                                            border: '1px solid var(--edge)',
                                             borderRadius: '8px',
                                             marginTop: '4px',
                                             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -388,7 +388,7 @@ const UserManagement = () => {
                                                         flex: 1,
                                                         padding: '8px',
                                                         borderRadius: '6px',
-                                                        border: '1px solid #ddd',
+                                                        border: '1px solid var(--edge)',
                                                     }}
                                                 />
                                             </div>
@@ -403,7 +403,7 @@ const UserManagement = () => {
                                                     style={{
                                                         flex: 1,
                                                         padding: '6px',
-                                                        backgroundColor: '#e6f0ff',
+                                                        backgroundColor: 'var(--gray-50)',
                                                         border: '1px solid var(--primary-blue)',
                                                         color: 'var(--primary-blue)',
                                                         borderRadius: '6px',
@@ -421,9 +421,9 @@ const UserManagement = () => {
                                                     style={{
                                                         flex: 1,
                                                         padding: '6px',
-                                                        backgroundColor: '#fff0f0',
-                                                        border: '1px solid #dc3545',
-                                                        color: '#dc3545',
+                                                        backgroundColor: 'var(--rust-wash)',
+                                                        border: '1px solid var(--rust)',
+                                                        color: 'var(--rust)',
                                                         borderRadius: '6px',
                                                         cursor: 'pointer',
                                                         fontSize: '12px',
@@ -451,7 +451,7 @@ const UserManagement = () => {
                                                             borderRadius: '6px',
                                                             cursor: 'pointer',
                                                             fontSize: '14px',
-                                                            backgroundColor: formData.zoneAccess.includes(zone.id) ? '#f0f7ff' : 'transparent',
+                                                            backgroundColor: formData.zoneAccess.includes(zone.id) ? 'var(--gray-50)' : 'transparent',
                                                         }}>
                                                             <input
                                                                 type="checkbox"
@@ -463,7 +463,7 @@ const UserManagement = () => {
                                                         </label>
                                                     ))}
                                                 {zones.filter(zone => zone.name.toLowerCase().includes(zoneSearch.toLowerCase())).length === 0 && (
-                                                    <div style={{ color: '#999', fontStyle: 'italic', padding: '8px', textAlign: 'center' }}>
+                                                    <div style={{ color: 'var(--stone)', fontStyle: 'italic', padding: '8px', textAlign: 'center' }}>
                                                         No zones match "{zoneSearch}"
                                                     </div>
                                                 )}
@@ -496,7 +496,7 @@ const UserManagement = () => {
                                 onClick={handleCancel}
                                 style={{
                                     padding: '10px 24px',
-                                    backgroundColor: '#6c757d',
+                                    backgroundColor: 'var(--slate)',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -530,16 +530,16 @@ const UserManagement = () => {
                     <tbody>
                         {sortedUsers.length === 0 ? (
                             <tr>
-                                <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#999' }}>
+                                <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: 'var(--stone)' }}>
                                     No users found. Add new user from above.
                                 </td>
                             </tr>
                         ) : (
                             sortedUsers.map((user, index) => (
                                 <tr key={user.username} style={{
-                                    backgroundColor: isAntiGravity(user) ? 'rgba(102, 126, 234, 0.05)' : (index % 2 === 0 ? 'white' : '#f9f9f9'),
-                                    borderBottom: '1px solid #eee',
-                                    borderLeft: isAntiGravity(user) ? '3px solid #667eea' : 'none',
+                                    backgroundColor: isAntiGravity(user) ? 'rgba(52, 66, 74, 0.05)' : (index % 2 === 0 ? 'white' : 'var(--gray-50)'),
+                                    borderBottom: '1px solid var(--edge)',
+                                    borderLeft: isAntiGravity(user) ? '3px solid var(--slate)' : 'none',
                                 }}>
                                     <td style={{ padding: '12px', fontWeight: '600' }}>
                                         {user.username}
@@ -550,7 +550,7 @@ const UserManagement = () => {
                                                 fontWeight: '700',
                                                 padding: '2px 6px',
                                                 borderRadius: '4px',
-                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                background: 'var(--slate)',
                                                 color: 'white',
                                             }}>
                                                 ⚡
@@ -563,14 +563,14 @@ const UserManagement = () => {
                                                 <span
                                                     style={{
                                                         padding: '4px 10px',
-                                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                        background: 'var(--slate)',
                                                         color: 'white',
                                                         borderRadius: '12px',
                                                         fontSize: '12px',
                                                         fontWeight: '700',
                                                     }}
                                                 >
-                                                    ⚡ Anti-Gravity
+                                                    Anti-Gravity
                                                 </span>
                                             )}
                                             {!isAntiGravity(user) && user.roles?.sort((a, b) => ROLE_PRIORITY[a] - ROLE_PRIORITY[b]).map(role => (
@@ -578,7 +578,7 @@ const UserManagement = () => {
                                                     key={role}
                                                     style={{
                                                         padding: '4px 10px',
-                                                        backgroundColor: ROLE_COLORS[role]?.bg || '#666',
+                                                        backgroundColor: ROLE_COLORS[role]?.bg || 'var(--stone)',
                                                         color: ROLE_COLORS[role]?.color || 'white',
                                                         borderRadius: '12px',
                                                         fontSize: '12px',
@@ -595,18 +595,18 @@ const UserManagement = () => {
                                         {isAntiGravity(user) || user.zoneAccess?.includes('ALL') ? (
                                             <span style={{
                                                 padding: '4px 10px',
-                                                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2))',
+                                                background: 'linear-gradient(135deg, rgba(52, 66, 74, 0.2), rgba(52, 66, 74, 0.2))',
                                                 borderRadius: '12px',
                                                 fontSize: '12px',
                                                 fontWeight: '600',
-                                                color: '#667eea',
+                                                color: 'var(--slate)',
                                             }}>
                                                 ✓ All Zones
                                             </span>
                                         ) : user.zoneAccess?.length > 0 ? (
                                             <span style={{
                                                 padding: '4px 10px',
-                                                backgroundColor: '#e9ecef',
+                                                backgroundColor: 'var(--edge)',
                                                 borderRadius: '12px',
                                                 fontSize: '12px',
                                             }}>
@@ -634,7 +634,7 @@ const UserManagement = () => {
                                             onClick={() => handleDelete(user.username)}
                                             style={{
                                                 padding: '6px 16px',
-                                                backgroundColor: '#dc3545',
+                                                backgroundColor: 'var(--rust)',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '6px',

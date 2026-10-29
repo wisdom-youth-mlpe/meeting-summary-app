@@ -233,7 +233,7 @@ const MemberManagement = () => {
 
             {showForm && (
                 <div className="form-card">
-                    <h3>{editingCommittee ? '✏️ Edit Member' : '➕ Add New Member'}</h3>
+                    <h3>{editingCommittee ? 'Edit Member' : 'Add New Member'}</h3>
                     <form onSubmit={handleSubmit}>
                         <div className="form-grid">
                             <div className="form-group">
@@ -406,7 +406,7 @@ const MemberManagement = () => {
                                         <td>
                                             <div className="member-name">{committee.name}</div>
                                             {committee.mobile && (
-                                                <div className="member-mobile">📱 {committee.mobile}</div>
+                                                <div className="member-mobile">{committee.mobile}</div>
                                             )}
                                         </td>
                                         <td>
@@ -472,7 +472,7 @@ const MemberManagement = () => {
 
         .form-card h3 {
           margin: 0 0 16px 0;
-          color: #2c3e50;
+          color: var(--slate);
           font-size: 1.1rem;
         }
 
@@ -491,14 +491,14 @@ const MemberManagement = () => {
 
         .form-group label {
           font-weight: 600;
-          color: #555;
+          color: var(--stone);
           font-size: 0.85rem;
         }
 
         .form-group input,
         .form-group select {
           padding: 10px 12px;
-          border: 1px solid #ddd;
+          border: 1px solid var(--edge);
           border-radius: 8px;
           font-size: 0.95rem;
           font-family: 'Anek Malayalam', sans-serif;
@@ -538,7 +538,7 @@ const MemberManagement = () => {
 
         .btn-secondary {
           padding: 10px 24px;
-          background: #6c757d;
+          background: var(--slate);
           color: white;
           border: none;
           border-radius: 8px;
@@ -550,7 +550,7 @@ const MemberManagement = () => {
         }
 
         .btn-secondary:hover {
-          background: #5a6268;
+          background: var(--slate);
         }
 
         /* Filter Section */
@@ -575,7 +575,7 @@ const MemberManagement = () => {
 
         .filter-group label {
           font-weight: 600;
-          color: #777;
+          color: var(--stone);
           font-size: 0.8rem;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -583,11 +583,11 @@ const MemberManagement = () => {
 
         .filter-select {
           padding: 8px 12px;
-          border: 1px solid #e0e0e0;
+          border: 1px solid var(--edge);
           border-radius: 8px;
           font-size: 0.9rem;
           font-family: 'Anek Malayalam', sans-serif;
-          background: #fafafa;
+          background: var(--gray-50);
           transition: border-color 0.2s;
         }
 
@@ -618,18 +618,18 @@ const MemberManagement = () => {
         }
 
         .badge-total {
-          background: #e8f5e9;
-          color: #2e7d32;
+          background: var(--paddy-wash);
+          color: var(--paddy);
         }
 
         .badge-zone {
-          background: #e3f2fd;
-          color: #1565c0;
+          background: var(--gray-50);
+          color: var(--slate);
         }
 
         .badge-role {
-          background: #fff3e0;
-          color: #e65100;
+          background: var(--clay-wash);
+          color: var(--clay);
         }
 
         /* Table */
@@ -646,13 +646,13 @@ const MemberManagement = () => {
         .member-table td {
           padding: 10px 12px;
           text-align: left;
-          border-bottom: 1px solid #f0f0f0;
+          border-bottom: 1px solid var(--edge);
         }
 
         .member-table th {
-          background: #f8f9fa;
+          background: var(--gray-50);
           font-weight: 600;
-          color: #666;
+          color: var(--stone);
           font-size: 0.85rem;
           text-transform: uppercase;
           letter-spacing: 0.3px;
@@ -661,31 +661,31 @@ const MemberManagement = () => {
         }
 
         .member-table tbody tr:hover {
-          background: #f5f9f5;
+          background: var(--paddy-wash);
         }
 
         .td-index {
-          color: #aaa;
+          color: var(--stone);
           font-size: 0.85rem;
           min-width: 30px;
         }
 
         .member-name {
           font-weight: 600;
-          color: #333;
+          color: var(--slate);
         }
 
         .member-mobile {
           font-size: 0.8rem;
-          color: #999;
+          color: var(--stone);
           margin-top: 2px;
         }
 
         .role-badge {
           display: inline-block;
           padding: 3px 10px;
-          background: #f3e5f5;
-          color: #7b1fa2;
+          background: var(--gray-50);
+          color: var(--slate);
           border-radius: 12px;
           font-size: 0.82rem;
           font-weight: 500;
@@ -694,8 +694,8 @@ const MemberManagement = () => {
         .zone-badge {
           display: inline-block;
           padding: 3px 10px;
-          background: #e8f5e9;
-          color: #2e7d32;
+          background: var(--paddy-wash);
+          color: var(--paddy);
           border-radius: 12px;
           font-size: 0.82rem;
           font-weight: 500;
@@ -703,7 +703,7 @@ const MemberManagement = () => {
 
         .td-mobile {
           font-size: 0.9rem;
-          color: #555;
+          color: var(--stone);
         }
 
         .action-buttons {
@@ -722,37 +722,37 @@ const MemberManagement = () => {
         }
 
         .btn-edit {
-          background: #e3f2fd;
+          background: var(--gray-50);
         }
 
         .btn-edit:hover {
-          background: #bbdefb;
+          background: var(--edge);
           transform: scale(1.1);
         }
 
         .btn-delete {
-          background: #ffebee;
+          background: var(--rust-wash);
         }
 
         .btn-delete:hover {
-          background: #ffcdd2;
+          background: var(--rust-wash);
           transform: scale(1.1);
         }
 
         .empty-state {
           text-align: center;
           padding: 40px 20px;
-          color: #999;
+          color: var(--stone);
           font-style: italic;
         }
 
         .error-message {
-          background: #ffebee;
-          color: #c62828;
+          background: var(--rust-wash);
+          color: var(--rust);
           padding: 12px 16px;
           border-radius: 8px;
           margin-bottom: 16px;
-          border-left: 4px solid #c62828;
+          border-left: 4px solid var(--rust);
         }
 
         .loading-spinner {
