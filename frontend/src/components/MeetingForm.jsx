@@ -214,10 +214,8 @@ const MeetingForm = () => {
           const agendaItems = (response.agendas || [])
             .map((item) => (typeof item === 'string' ? item.trim() : ''))
             .filter((item, index, arr) => item && arr.indexOf(item) === index);
+          // Stored agendas are suggestions only; a new meeting starts with none selected
           setAgendas(agendaItems);
-          if (!selectedAgendasHydratedRef.current) {
-            setSelectedAgendas(agendaItems);
-          }
         }
       } catch (err) {
         console.error('Error fetching agendas:', err);
@@ -329,12 +327,9 @@ const MeetingForm = () => {
       );
       if (draftAgendas.length) {
         setSelectedAgendas(draftAgendas);
-        selectedAgendasHydratedRef.current = true;
-        return;
       }
     }
 
-    setSelectedAgendas(agendas);
     selectedAgendasHydratedRef.current = true;
   }, [agendas, draftHydrated]);
 
