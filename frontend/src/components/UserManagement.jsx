@@ -224,7 +224,7 @@ const UserManagement = () => {
                         onClick={() => setShowAddForm(true)}
                         style={{
                             padding: '10px 20px',
-                            backgroundColor: 'var(--primary-blue)',
+                            backgroundColor: 'var(--slate)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',
@@ -404,8 +404,8 @@ const UserManagement = () => {
                                                         flex: 1,
                                                         padding: '6px',
                                                         backgroundColor: 'var(--gray-50)',
-                                                        border: '1px solid var(--primary-blue)',
-                                                        color: 'var(--primary-blue)',
+                                                        border: '1px solid var(--slate)',
+                                                        color: 'var(--slate)',
                                                         borderRadius: '6px',
                                                         cursor: 'pointer',
                                                         fontSize: '12px',
@@ -479,7 +479,7 @@ const UserManagement = () => {
                                 type="submit"
                                 style={{
                                     padding: '10px 24px',
-                                    backgroundColor: 'var(--primary-green)',
+                                    backgroundColor: 'var(--paddy)',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -520,7 +520,7 @@ const UserManagement = () => {
             }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ backgroundColor: 'var(--primary-blue)', color: 'white' }}>
+                        <tr style={{ backgroundColor: 'var(--slate)', color: 'white' }}>
                             <th style={{ padding: '12px', textAlign: 'left' }}>Username</th>
                             <th style={{ padding: '12px', textAlign: 'left' }}>Roles</th>
                             <th style={{ padding: '12px', textAlign: 'left' }}>Zone Access</th>
@@ -619,7 +619,7 @@ const UserManagement = () => {
                                             onClick={() => handleEdit(user)}
                                             style={{
                                                 padding: '6px 16px',
-                                                backgroundColor: 'var(--primary-green)',
+                                                backgroundColor: 'var(--paddy)',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '6px',

@@ -85,6 +85,11 @@ body {
   min-height: 100vh;
 }
 
+/* Anek Malayalam sets large; a 15px root keeps every rem size one notch smaller */
+html {
+  font-size: 15px;
+}
+
 #root {
   min-height: 100vh;
 }
