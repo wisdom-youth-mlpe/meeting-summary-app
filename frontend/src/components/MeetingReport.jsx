@@ -378,7 +378,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
   if (loading) {
     return (
       <div className="container">
-        <div style={{ textAlign: 'center', padding: '40px' }}>
+        <div className="loading">
           ലോഡ് ചെയ്യുന്നു... (Loading...)
         </div>
       </div>
@@ -422,226 +422,127 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     return `${day}-${month}-${year}`;
   };
 
+  const renderActions = (meeting) => (
+    <div className="meeting-actions">
+      <button type="button" onClick={() => handleView(meeting.meetingId)}>
+        റിപ്പോർട്ട്
+      </button>
+      {canEdit(meeting) && (
+        <>
+          <button type="button" className="btn-secondary" onClick={() => handleEdit(meeting.meetingId)}>
+            Edit
+          </button>
+          <button
+            type="button"
+            className="btn-quiet danger"
+            onClick={() => handleDelete(meeting.meetingId)}
+            disabled={deletingId === meeting.meetingId}
+          >
+            {deletingId === meeting.meetingId ? 'Deleting...' : 'Delete'}
+          </button>
+        </>
+      )}
+    </div>
+  );
+
+  // Table on wide screens, one card per meeting on phones
   const renderMeetingsTable = (meetingList) => (
-    <div style={{ overflowX: 'auto', marginBottom: '32px' }}>
-      <table style={{
-        width: '100%',
-        borderCollapse: 'collapse',
-        backgroundColor: '#fff',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-      }}>
+    <>
+      <table className="meetings-table">
         <thead>
-          <tr style={{ backgroundColor: '#3498db', color: '#fff' }}>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>S.No</th>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Meeting Date</th>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>മണ്ഡലം (Zone)</th>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Saved Date</th>
-            <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Actions</th>
+          <tr>
+            <th>S.No</th>
+            <th>Meeting Date</th>
+            <th>മണ്ഡലം (Zone)</th>
+            <th>Saved Date</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {meetingList.map((meeting, index) => (
-            <tr key={meeting.meetingId} style={{
-              backgroundColor: index % 2 === 0 ? '#fff' : '#f9f9f9'
-            }}>
-              <td style={{ padding: '12px', border: '1px solid #ddd' }}>{index + 1}</td>
-              <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                {formatDateDisplay(meeting.date)}
-              </td>
-              <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                {meeting.zoneName || '-'}
-              </td>
-              <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                {formatDate(meeting.savedDate)}
-              </td>
-              <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                  <button
-                    onClick={() => handleView(meeting.meetingId)}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#3498db',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '14px'
-                    }}
-                  >
-                    റിപ്പോർട്ട്
-                  </button>
-                  {canEdit(meeting) && (
-                    <>
-                      <button
-                        onClick={() => handleEdit(meeting.meetingId)}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#f39c12',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(meeting.meetingId)}
-                        disabled={deletingId === meeting.meetingId}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#e74c3c',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: deletingId === meeting.meetingId ? 'not-allowed' : 'pointer',
-                          opacity: deletingId === meeting.meetingId ? 0.6 : 1,
-                          fontSize: '14px'
-                        }}
-                      >
-                        {deletingId === meeting.meetingId ? 'Deleting...' : 'Delete'}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </td>
+            <tr key={meeting.meetingId}>
+              <td className="nums">{index + 1}</td>
+              <td className="nums">{formatDateDisplay(meeting.date)}</td>
+              <td>{meeting.zoneName || '-'}</td>
+              <td className="nums">{formatDate(meeting.savedDate)}</td>
+              <td>{renderActions(meeting)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+
+      <ol className="meeting-cards">
+        {meetingList.map((meeting) => (
+          <li key={meeting.meetingId} className="meeting-card">
+            <div className="meeting-card-top">
+              <span className="meeting-card-zone">{meeting.zoneName || '-'}</span>
+              <span className="meeting-card-date nums">{formatDateDisplay(meeting.date)}</span>
+            </div>
+            <span className="meeting-card-saved nums">Saved Date: {formatDate(meeting.savedDate)}</span>
+            {renderActions(meeting)}
+          </li>
+        ))}
+      </ol>
+    </>
   );
 
-  const CollapsibleSection = ({ title, children, defaultExpanded = true }) => {
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-    return (
-      <div className="report-section" style={{ marginBottom: '16px' }}>
-        <div 
-          onClick={() => setIsExpanded(!isExpanded)} 
-          style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            cursor: 'pointer',
-            padding: '4px 0'
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: '1.1rem' }}>{title}</h2>
-          <span style={{ 
-            fontSize: '1.2rem', 
-            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease'
-          }}>
-            ▼
-          </span>
-        </div>
-        {isExpanded && (
-          <div style={{ marginTop: '12px', animation: 'fadeIn 0.3s ease' }}>
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
+  const CollapsibleSection = ({ title, children, defaultExpanded = true }) => (
+    <details className="report-section collapsible" open={defaultExpanded}>
+      <summary>
+        <h2>{title}</h2>
+        <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </summary>
+      <div className="collapsible-body">{children}</div>
+    </details>
+  );
 
   return (
-    <div className="container" style={{ paddingBottom: '30px' }}>
-      <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-        <h1 style={{ marginBottom: '4px' }}>മീറ്റിംഗ് റിപ്പോർട്ടുകൾ (Meeting Reports)</h1>
+    <div className="container">
+      <div className="page-head">
+        <h1>മീറ്റിംഗ് റിപ്പോർട്ടുകൾ (Meeting Reports)</h1>
         {weekRange.start && weekRange.end && (
-          <div style={{ 
-            fontSize: '0.95rem', 
-            color: 'var(--primary)', 
-            fontWeight: '700',
-            background: 'var(--primary-light)',
-            display: 'inline-block',
-            padding: '6px 16px',
-            borderRadius: '20px',
-            marginTop: '8px'
-          }}>
-            📅 Reporting Week: {formatDateShort(weekRange.start)} - {formatDateShort(weekRange.end)}
-          </div>
+          <span className="week-tag nums">
+            Reporting Week: {formatDateShort(weekRange.start)} - {formatDateShort(weekRange.end)}
+          </span>
         )}
       </div>
 
-      {error && <div className="error" style={{ marginBottom: '20px', textAlign: 'center' }}>{error}</div>}
+      {error && <div className="error">{error}</div>}
 
       {!selectedReport ? (
         <>
-          {/* Filters */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '15px', 
-            marginBottom: '30px', 
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            background: 'var(--white)',
-            padding: '20px',
-            borderRadius: '16px',
-            boxShadow: 'var(--shadow-md)',
-            border: '1px solid var(--gray-100)'
-          }}>
-            <div style={{ flex: '2', minWidth: '250px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--gray-500)', marginBottom: '6px', textTransform: 'uppercase' }}>
-                Search Zone or Date
-              </label>
+          <div className="filter-bar">
+            <div className="filter-search">
+              <label htmlFor="report-search">Search Zone or Date</label>
               <input
+                id="report-search"
                 type="text"
-                placeholder="🔎 മണ്ഡലം അല്ലെങ്കിൽ തീയതി തിരയുക..."
+                placeholder="മണ്ഡലം അല്ലെങ്കിൽ തീയതി തിരയുക..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--gray-200)',
-                  fontSize: '1rem',
-                  background: 'var(--gray-50)'
-                }}
               />
             </div>
-            
-            <div style={{ flex: '1', minWidth: '180px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--gray-500)', marginBottom: '6px', textTransform: 'uppercase' }}>
-                Pick Specific Date
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--gray-200)',
-                    fontSize: '1rem',
-                    background: 'var(--gray-50)'
-                  }}
-                />
-              </div>
+
+            <div className="filter-date">
+              <label htmlFor="report-date">Pick Specific Date</label>
+              <input
+                id="report-date"
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+              />
             </div>
 
             {(searchTerm || filterDate) && (
-              <button 
+              <button
+                type="button"
+                className="btn-quiet"
                 onClick={() => {
                   setSearchTerm('');
                   setFilterDate('');
                 }}
-                style={{
-                  marginTop: '22px',
-                  padding: '10px 20px',
-                  background: 'var(--gray-100)',
-                  color: 'var(--gray-700)',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'var(--gray-200)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'var(--gray-100)'}
               >
                 ✕ Clear All
               </button>
@@ -649,88 +550,68 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
           </div>
 
           {filteredMeetings.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
+            <div className="empty-note">
               ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല (No meetings found)
             </div>
           ) : (
             <div>
               {weekMeetings.length > 0 && (
-                <>
-                  <h2 style={{ fontSize: '1.2rem', color: 'var(--primary)', marginBottom: '12px' }}>
-                    ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ (This Week)
-                  </h2>
+                <section className="report-group">
+                  <h2>ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ (This Week)</h2>
                   {renderMeetingsTable(weekMeetings)}
-                </>
+                </section>
               )}
 
               {olderMeetings.length > 0 && (
-                <>
-                  <h2 style={{ fontSize: '1.2rem', color: 'var(--gray-600)', marginBottom: '12px', marginTop: '40px' }}>
-                    പഴയ റിപ്പോർട്ടുകൾ (Older Reports)
-                  </h2>
+                <section className="report-group">
+                  <h2 className="muted">പഴയ റിപ്പോർട്ടുകൾ (Older Reports)</h2>
                   {renderMeetingsTable(olderMeetings)}
-                </>
+                </section>
               )}
 
               {hasMore && (
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                  <button 
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    className="btn btn-secondary"
-                    style={{ padding: '10px 24px', fontSize: '1rem' }}
-                  >
-                    {loadingMore ? 'ലോഡ് ചെയ്യുന്നു...' : 'കൂടുതൽ റിപ്പോർട്ടുകൾ കാണുക (Load More)'}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="btn-secondary load-more"
+                >
+                  {loadingMore ? 'ലോഡ് ചെയ്യുന്നു...' : 'കൂടുതൽ റിപ്പോർട്ടുകൾ കാണുക (Load More)'}
+                </button>
               )}
             </div>
           )}
         </>
       ) : (
         <div>
-          <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+          <div className="report-toolbar">
             <button
+              type="button"
+              className="btn-quiet"
               onClick={() => {
                 setSelectedReport(null);
                 setSelectedMeetingData(null);
               }}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#95a5a6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
             >
               ← Back to List
             </button>
-            <button
-              onClick={handleCopyReport}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
+            <button type="button" onClick={handleCopyReport}>
               Copy Report
             </button>
           </div>
 
           <div className="report-container">
             <CollapsibleSection title="മീറ്റിംഗ് വിവരങ്ങൾ (Meeting Details)">
-              <p><strong>മണ്ഡലം (Zone):</strong> {selectedMeetingData.zoneName}</p>
-              <p><strong>തീയതി (Date):</strong> {selectedMeetingData.date}</p>
-              {selectedMeetingData.startTime && (
-                <p><strong>തുടങ്ങിയ സമയം (Start Time):</strong> {formatTime12h(selectedMeetingData.startTime)}</p>
-              )}
-              {selectedMeetingData.endTime && (
-                <p><strong>അവസാനിച്ച സമയം (End Time):</strong> {formatTime12h(selectedMeetingData.endTime)}</p>
-              )}
+              <dl className="detail-list">
+                <dt>മണ്ഡലം (Zone)</dt><dd>{selectedMeetingData.zoneName}</dd>
+                <dt>തീയതി (Date)</dt><dd className="nums">{selectedMeetingData.date}</dd>
+                {selectedMeetingData.startTime && (
+                  <><dt>തുടങ്ങിയ സമയം (Start Time)</dt><dd className="nums">{formatTime12h(selectedMeetingData.startTime)}</dd></>
+                )}
+                {selectedMeetingData.endTime && (
+                  <><dt>അവസാനിച്ച സമയം (End Time)</dt><dd className="nums">{formatTime12h(selectedMeetingData.endTime)}</dd></>
+                )}
+              </dl>
             </CollapsibleSection>
 
             <CollapsibleSection title="പങ്കെടുത്തവർ (Attendees)">
@@ -757,12 +638,6 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
           </div>
         </div>
       )}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 };
