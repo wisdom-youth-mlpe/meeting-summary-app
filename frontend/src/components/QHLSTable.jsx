@@ -9,24 +9,24 @@ const QHLS_STATUS_OPTIONS = [
 const QHLSTable = React.memo(({ qhlsData, onQHLSChange }) => {
   const [showHidden, setShowHidden] = useState(false);
 
-  // Use ref to store current qhlsData without triggering re-creation of handleStatusChange
+  // Use ref to store current qhlsData without triggering re-creation of updateRow
   const qhlsDataRef = useRef(qhlsData);
   useEffect(() => {
     qhlsDataRef.current = qhlsData;
   }, [qhlsData]);
 
-  const handleStatusChange = useCallback((index, status) => {
+  const updateRow = useCallback((index, changes) => {
     const updatedData = [...qhlsDataRef.current];
-    updatedData[index] = { ...updatedData[index], status };
+    updatedData[index] = { ...updatedData[index], ...changes };
     onQHLSChange(updatedData);
   }, [onQHLSChange]);
 
-  // Units marked QHLS ഇല്ല leave the list; the restore link brings them back
+  // Units saved as QHLS ഇല്ല in the last meeting stay out of the list; the restore link brings them back
   const visibleRows = [];
   const hiddenRows = [];
   qhlsData.forEach((row, index) => {
     if (!row.unit) return;
-    (row.status === 'illa' ? hiddenRows : visibleRows).push({ row, index });
+    (row.carried && row.status === 'illa' ? hiddenRows : visibleRows).push({ row, index });
   });
 
   useEffect(() => {
@@ -112,7 +112,7 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange }) => {
             <select
               id={`qhls-status-${index}`}
               value={row.status || ''}
-              onChange={(e) => handleStatusChange(index, e.target.value)}
+              onChange={(e) => updateRow(index, { status: e.target.value })}
               style={styles.select}
             >
               <option value="">-- തിരഞ്ഞെടുക്കുക --</option>
@@ -140,7 +140,7 @@ const QHLSTable = React.memo(({ qhlsData, onQHLSChange }) => {
                 <button
                   key={row.unit}
                   type="button"
-                  onClick={() => handleStatusChange(index, '')}
+                  onClick={() => updateRow(index, { status: '', carried: false, restored: true })}
                   style={styles.hiddenUnit}
                 >
                   {row.unit}

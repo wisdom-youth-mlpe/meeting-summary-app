@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getZones, getAttendees, getAgendas, saveMeeting, getMeetingReport, updateMeeting } from '../services/api';
+import { getZones, getAttendees, getAgendas, saveMeeting, getMeetingReport, updateMeeting, getAllMeetings } from '../services/api';
 import { getAccessibleZones, hasAnyRole, getUser, getUserAccessConfig, hasRole } from '../services/auth';
 import { setZonesCache } from '../services/zoneHelper';
 import ZoneSelector from './ZoneSelector';
@@ -99,6 +99,8 @@ const MeetingForm = () => {
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingMeetingId, setEditingMeetingId] = useState(null);
+  const [carriedIllaUnits, setCarriedIllaUnits] = useState([]);
+  const [lastMeetingRefresh, setLastMeetingRefresh] = useState(0);
   const attendanceDraftRef = useRef(null);
   const qhlsDraftRef = useRef(null);
   const savedZoneRef = useRef(null);
@@ -498,6 +500,41 @@ const MeetingForm = () => {
       });
     }
   }, [selectedZone, zoneUnits]);
+
+  // Units marked QHLS ഇല്ല in the zone's last saved meeting start under the restore link
+  useEffect(() => {
+    setCarriedIllaUnits([]);
+    if (!selectedZoneName || isEditing) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await getAllMeetings(null, 1, 10, selectedZoneName);
+        const lastMeeting = (list.meetings || []).find((m) => m.zoneName === selectedZoneName);
+        if (!lastMeeting) return;
+        const { meetingData } = await getMeetingReport(lastMeeting.meetingId);
+        if (cancelled) return;
+        setCarriedIllaUnits(
+          (meetingData?.qhls || []).filter((row) => row.status === 'illa').map((row) => row.unit)
+        );
+      } catch (err) {
+        console.warn('Failed to load last meeting QHLS', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedZoneName, isEditing, lastMeetingRefresh]);
+
+  useEffect(() => {
+    if (isEditing || carriedIllaUnits.length === 0) return;
+    const carried = new Set(carriedIllaUnits);
+    // Skip rows that already have a status or that the user restored
+    const shouldCarry = (row) => carried.has(row.unit) && !row.status && !row.restored;
+    if (!qhlsData.some(shouldCarry)) return;
+    setQhlsData((prev) =>
+      prev.map((row) => (shouldCarry(row) ? { ...row, status: 'illa', carried: true } : row))
+    );
+  }, [carriedIllaUnits, qhlsData, isEditing]);
 
   const handleZoneChange = (zoneId) => {
     setSelectedZone(zoneId);
@@ -1155,7 +1192,7 @@ const MeetingForm = () => {
         qhls: qhlsData
           .filter(row => row.unit)
           // Spread keeps the detail fields older meetings stored, so editing one doesn't drop them
-          .map(({ isExtra, ...row }) => ({ ...row, hasQhls: row.status !== 'illa' })),
+          .map(({ isExtra, carried, restored, ...row }) => ({ ...row, hasQhls: row.status !== 'illa' })),
       };
 
       const response = isEditMode
@@ -1198,6 +1235,7 @@ const MeetingForm = () => {
         // Keep zone, attendees, agendas populated for next meeting input
         // Reset QHLS data but keep units
         setQhlsData(buildQhlsRows(zoneUnits));
+        setLastMeetingRefresh((n) => n + 1);
       } else {
         const errorMsg = 'മീറ്റിംഗ് സംഗ്രഹം സേവ് ചെയ്യുന്നതിൽ പിശക് (Error saving meeting summary)';
         setError(errorMsg);
