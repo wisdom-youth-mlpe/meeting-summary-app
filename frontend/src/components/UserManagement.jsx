@@ -512,15 +512,10 @@ const UserManagement = () => {
                 </div>
             )}
 
-            <div style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="data-table-wrap">
+                <table className="data-table">
                     <thead>
-                        <tr style={{ backgroundColor: 'var(--slate)', color: 'white' }}>
+                        <tr>
                             <th style={{ padding: '12px', textAlign: 'left' }}>Username</th>
                             <th style={{ padding: '12px', textAlign: 'left' }}>Roles</th>
                             <th style={{ padding: '12px', textAlign: 'left' }}>Zone Access</th>
@@ -541,7 +536,7 @@ const UserManagement = () => {
                                     borderBottom: '1px solid var(--edge)',
                                     borderLeft: isAntiGravity(user) ? '3px solid var(--slate)' : 'none',
                                 }}>
-                                    <td style={{ padding: '12px', fontWeight: '600' }}>
+                                    <td data-label="Username" style={{ padding: '12px', fontWeight: '600' }}>
                                         {user.username}
                                         {isAntiGravity(user) && (
                                             <span style={{
@@ -557,7 +552,7 @@ const UserManagement = () => {
                                             </span>
                                         )}
                                     </td>
-                                    <td style={{ padding: '12px' }}>
+                                    <td data-label="Roles" style={{ padding: '12px' }}>
                                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                             {isAntiGravity(user) && (
                                                 <span
@@ -591,7 +586,7 @@ const UserManagement = () => {
                                             {!isAntiGravity(user) && (!user.roles || user.roles.length === 0) && '-'}
                                         </div>
                                     </td>
-                                    <td style={{ padding: '12px' }}>
+                                    <td data-label="Zone Access" style={{ padding: '12px' }}>
                                         {isAntiGravity(user) || user.zoneAccess?.includes('ALL') ? (
                                             <span style={{
                                                 padding: '4px 10px',
@@ -614,7 +609,7 @@ const UserManagement = () => {
                                             </span>
                                         ) : '-'}
                                     </td>
-                                    <td style={{ padding: '12px', textAlign: 'center' }}>
+                                    <td className="data-table-actions" style={{ padding: '12px', textAlign: 'center' }}>
                                         <button
                                             onClick={() => handleEdit(user)}
                                             style={{

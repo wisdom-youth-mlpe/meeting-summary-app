@@ -1374,3 +1374,154 @@ label.check input {
 .detail-list dd {
   font-weight: 600;
 }
+
+/* ======================================
+   Admin menu
+   ====================================== */
+.admin-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-menu-item {
+  justify-content: flex-start;
+  gap: var(--space-lg);
+  width: 100%;
+  min-height: 72px;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface);
+  color: var(--slate);
+  text-align: left;
+  font-weight: 400;
+}
+
+.admin-menu-item:hover {
+  background: var(--paddy-wash);
+}
+
+.admin-menu-icon {
+  flex-shrink: 0;
+  color: var(--paddy);
+}
+
+.admin-menu-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-menu-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.admin-menu-desc {
+  color: var(--stone);
+  font-size: 0.9rem;
+}
+
+.admin-menu-arrow {
+  flex-shrink: 0;
+  color: var(--stone);
+}
+
+/* ======================================
+   Data tables (users, members, zones)
+   Rows become cards on phones; td[data-label] supplies the column name
+   ====================================== */
+.data-table-wrap {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--stone);
+  background: var(--gray-50);
+  padding: 10px 12px;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid var(--mist);
+}
+
+.data-table-actions button {
+  min-height: 36px;
+  padding: 0 14px !important;
+}
+
+@media (max-width: 640px) {
+  .data-table-wrap {
+    background: transparent;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tbody tr {
+    background: var(--surface) !important;
+    border-radius: var(--radius-md);
+    margin-bottom: 6px;
+    padding: 6px 0;
+    border-bottom: none;
+  }
+
+  .data-table td {
+    padding: 4px 14px !important;
+    text-align: left !important;
+  }
+
+  .data-table td[data-label]:not([data-label="Username"]):not([data-label="Name"])::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.8rem;
+    color: var(--stone);
+  }
+
+  .data-table-actions {
+    display: flex !important;
+    gap: 6px;
+    padding-top: 8px !important;
+  }
+
+  .data-table-actions button {
+    flex: 1;
+    margin: 0 !important;
+  }
+}
+
+/* Generic surface card used by admin forms */
+.card {
+  background: var(--surface);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+}
+
+.btn-primary {
+  background: var(--paddy);
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  accent-color: var(--paddy);
+}

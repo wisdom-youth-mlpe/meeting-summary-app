@@ -179,10 +179,10 @@ const ZoneManagement = () => {
                 </div>
             )}
 
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="data-table-wrap">
+                <table className="data-table">
                     <thead>
-                        <tr style={{ background: 'var(--gray-100)', textAlign: 'left' }}>
+                        <tr>
                             <th style={{ padding: '12px 20px' }}>ID</th>
                             <th style={{ padding: '12px 20px' }}>Name</th>
                             <th style={{ padding: '12px 20px' }}>District</th>
@@ -192,10 +192,10 @@ const ZoneManagement = () => {
                     <tbody>
                         {zones.map(zone => (
                             <tr key={zone.id} style={{ borderTop: '1px solid var(--gray-100)' }}>
-                                <td style={{ padding: '12px 20px' }}>{zone.id}</td>
-                                <td style={{ padding: '12px 20px', fontWeight: '600' }}>{zone.name}</td>
-                                <td style={{ padding: '12px 20px' }}>{zone.districtId}</td>
-                                <td style={{ padding: '12px 20px', textAlign: 'center' }}>
+                                <td data-label="ID" style={{ padding: '12px 20px' }}>{zone.id}</td>
+                                <td data-label="Username" style={{ padding: '12px 20px', fontWeight: '600' }}>{zone.name}</td>
+                                <td data-label="District" style={{ padding: '12px 20px' }}>{zone.districtId}</td>
+                                 <td className="data-table-actions" style={{ padding: '12px 20px', textAlign: 'center' }}>
                                     <button 
                                         className="btn btn-secondary" 
                                         style={{ padding: '4px 12px', marginRight: '8px' }}
@@ -205,7 +205,7 @@ const ZoneManagement = () => {
                                     </button>
                                     <button 
                                         className="btn btn-danger" 
-                                        style={{ padding: '4px 12px', background: 'var(--rust)', color: 'white', border: 'none', borderRadius: '4px' }}
+                                        style={{ padding: '4px 12px' }}
                                         onClick={() => handleDelete(zone.id, zone.name)}
                                     >
                                         Delete
