@@ -1249,9 +1249,20 @@ label.check input {
   min-width: 0;
 }
 
-.report-card-date {
-  font-weight: 700;
+.report-card-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-sm);
   font-size: 1.05rem;
+}
+
+.report-card-zone {
+  font-weight: 700;
+}
+
+.report-card-date {
+  font-weight: 400;
 }
 
 .report-card-meta {

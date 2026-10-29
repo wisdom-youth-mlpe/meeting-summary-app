@@ -453,11 +453,11 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
           <details className="report-card">
             <summary>
               <span className="report-card-text">
-                <span className="report-card-date nums">{formatDateDisplay(meeting.date)}</span>
-                <span className="report-card-meta">
-                  <span className="nums">Saved {formatDate(meeting.savedDate)}</span>
-                  {meeting.zoneName && <span> · {meeting.zoneName}</span>}
+                <span className="report-card-title">
+                  <span className="report-card-zone">{meeting.zoneName || '-'}</span>
+                  <span className="report-card-date nums">{formatDateDisplay(meeting.date)}</span>
                 </span>
+                <span className="report-card-meta nums">Saved {formatDate(meeting.savedDate)}</span>
               </span>
               <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9" />
