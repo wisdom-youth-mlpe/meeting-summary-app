@@ -14,26 +14,24 @@ import html2canvas from 'html2canvas';
 const FORM_STORAGE_KEY = 'meetingFormDraft';
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
+// Older meetings have no status; derive it from the checkbox and detail fields they stored
+const deriveQhlsStatus = (row) => {
+  if (row.status) return row.status;
+  if (row.hasQhls === false) return 'illa';
+  if (row.day || row.faculty || parseInt(row.male, 10) || parseInt(row.female, 10)) return 'nadannu';
+  return '';
+};
+
 const buildQhlsRows = (units = [], existingData = []) => {
-  const defaultQhlsRow = { 
-    unit: '', 
-    day: '', 
-    faculty: '', 
-    facultyMobile: '', 
-    syllabus: '', 
-    location: '', 
-    afterRamadhan: '', 
-    male: '', 
-    female: '', 
-    hasQhls: true 
-  };
-  
-  // If no units provided, return existing data or a single default row
+  const defaultQhlsRow = { unit: '', status: '', hasQhls: true };
+  const toRow = (row) => ({ ...defaultQhlsRow, ...row, status: deriveQhlsStatus(row) });
+
+  // If no units provided, return existing data or nothing
   if (!Array.isArray(units) || units.length === 0) {
     if (Array.isArray(existingData) && existingData.length > 0) {
-      return existingData.map(row => ({ ...defaultQhlsRow, ...row }));
+      return existingData.map(toRow);
     }
-    return [{ ...defaultQhlsRow }];
+    return [];
   }
 
   const unitSet = new Set(units.map(u => u.trim()));
@@ -45,7 +43,7 @@ const buildQhlsRows = (units = [], existingData = []) => {
       : null;
     // Important: Keep existing data, or create a new row for the unit
     return existing 
-      ? { ...defaultQhlsRow, ...existing, unit: unitName } 
+      ? { ...toRow(existing), unit: unitName } 
       : { ...defaultQhlsRow, unit: unitName };
   });
 
@@ -53,7 +51,7 @@ const buildQhlsRows = (units = [], existingData = []) => {
   if (Array.isArray(existingData)) {
     existingData.forEach((row) => {
       if (row.unit && !unitSet.has(row.unit.trim())) {
-        rows.push({ ...defaultQhlsRow, ...row });
+        rows.push(toRow(row));
       }
     });
   }
@@ -612,23 +610,6 @@ const MeetingForm = () => {
     setQhlsData(data);
   }, []);
 
-  const handleAddQhlsRow = () => {
-    const defaultQhlsRow = { 
-      unit: '', 
-      day: '', 
-      faculty: '', 
-      facultyMobile: '', 
-      syllabus: '', 
-      location: '', 
-      afterRamadhan: '', 
-      male: '', 
-      female: '', 
-      hasQhls: true,
-      isExtra: true
-    };
-    setQhlsData([...qhlsData, defaultQhlsRow]);
-  };
-
   // Persist form draft whenever relevant state changes
   useEffect(() => {
     if (!draftHydrated) return;
@@ -1138,14 +1119,11 @@ const MeetingForm = () => {
       }
     }
 
-    // Validate QHLS data - if hasQhls is true, at least one field must be filled
-    const qhlsWithCheckbox = qhlsData.filter(row => row.hasQhls !== false);
-    for (const row of qhlsWithCheckbox) {
-      const hasData = row.day || row.faculty || row.male || row.female;
-      if (!hasData) {
-        alert(`QHLS ചെക്ക് ചെയ്തിട്ടുള്ള ${row.unit} യൂണിറ്റിന് ദയവായി QHLS ഡാറ്റ നൽകുക`);
-        return;
-      }
+    // Validate QHLS data - every unit still listed needs a status
+    const qhlsWithoutStatus = qhlsData.find(row => row.unit && !row.status);
+    if (qhlsWithoutStatus) {
+      alert(`ദയവായി ${qhlsWithoutStatus.unit} യൂണിറ്റിന്റെ QHLS സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക`);
+      return;
     }
 
     setSubmitting(true);
@@ -1174,7 +1152,10 @@ const MeetingForm = () => {
             leaveNotInformed: data.leaveNotInformed || false,
           };
         }),
-        qhls: qhlsData.filter(row => row.unit || row.day || row.faculty || row.male || row.female),
+        qhls: qhlsData
+          .filter(row => row.unit)
+          // Spread keeps the detail fields older meetings stored, so editing one doesn't drop them
+          .map(({ isExtra, ...row }) => ({ ...row, hasQhls: row.status !== 'illa' })),
       };
 
       const response = isEditMode
@@ -1216,7 +1197,7 @@ const MeetingForm = () => {
         setNandhi('');
         // Keep zone, attendees, agendas populated for next meeting input
         // Reset QHLS data but keep units
-        setQhlsData(buildQhlsRows());
+        setQhlsData(buildQhlsRows(zoneUnits));
       } else {
         const errorMsg = 'മീറ്റിംഗ് സംഗ്രഹം സേവ് ചെയ്യുന്നതിൽ പിശക് (Error saving meeting summary)';
         setError(errorMsg);
@@ -1312,8 +1293,6 @@ const MeetingForm = () => {
         <QHLSTable
           qhlsData={qhlsData}
           onQHLSChange={handleQHLSChange}
-          availableUnits={zoneUnits}
-          onAddExtraRow={handleAddQhlsRow}
         />
 
         {/* Meeting Roles Section */}

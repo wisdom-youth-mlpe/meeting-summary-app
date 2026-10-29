@@ -419,7 +419,17 @@ class MongoService {
 
     // Format QHLS data
     let qhlsReport = '';
-    if (qhls && qhls.length > 0) {
+    const qhlsStatusLabels = { nadannu: 'നടന്നു', nadannittilla: 'നടന്നിട്ടില്ല' };
+    const hasStatusRows = Array.isArray(qhls) && qhls.some(row => row.status);
+    if (hasStatusRows) {
+      // Newer meetings record only a status per unit; QHLS ഇല്ല units are left out
+      const statusRows = qhls.filter(row => row.unit && qhlsStatusLabels[row.status]);
+      if (statusRows.length > 0) {
+        const headings = 'യൂണിറ്റ്, സ്റ്റാറ്റസ്';
+        const statusRowsFormatted = statusRows.map(row => `${row.unit}, ${qhlsStatusLabels[row.status]}`);
+        qhlsReport = `${headings}\n${statusRowsFormatted.join('\n')}`;
+      }
+    } else if (qhls && qhls.length > 0) {
       // Filter out rows where both male and female are 0 or empty
       const validQhlsRows = qhls.filter(row => {
         const male = parseInt(row.male, 10) || 0;
