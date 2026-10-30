@@ -369,10 +369,26 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     return mDate >= weekRange.start && mDate <= weekRange.end;
   });
 
-  const olderMeetings = filteredMeetings.filter(m => {
-    if (!weekRange.start || !weekRange.end) return false;
+  // The reporting week before this one
+  const lastWeekRange = (() => {
+    if (!weekRange.start) return null;
+    const start = new Date(weekRange.start);
+    start.setDate(start.getDate() - 7);
+    const end = new Date(weekRange.start);
+    end.setDate(end.getDate() - 1);
+    return { start, end };
+  })();
+
+  const lastWeekMeetings = filteredMeetings.filter(m => {
+    if (!lastWeekRange) return false;
     const mDate = new Date(m.date + 'T00:00:00');
-    return mDate < weekRange.start;
+    return mDate >= lastWeekRange.start && mDate <= lastWeekRange.end;
+  });
+
+  const olderMeetings = filteredMeetings.filter(m => {
+    if (!lastWeekRange) return false;
+    const mDate = new Date(m.date + 'T00:00:00');
+    return mDate < lastWeekRange.start;
   });
 
   const formatDateShort = (d) => {
@@ -524,12 +540,24 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
                 </section>
               )}
 
+              {lastWeekRange && (
+                <section className="report-group">
+                  <h2>
+                    കഴിഞ്ഞ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ{' '}
+                    <span className="nums">({formatDateShort(lastWeekRange.start)} - {formatDateShort(lastWeekRange.end)})</span>
+                  </h2>
+                  {lastWeekMeetings.length > 0
+                    ? renderMeetingsTable(lastWeekMeetings)
+                    : <div className="empty-note">ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല</div>}
+                </section>
+              )}
+
               {olderMeetings.length > 0 && (
                 // Closed until needed; a search or date filter opens it so matches are visible
                 <details className="report-group collapsible" open={Boolean(searchTerm || filterDate)}>
                   <summary>
                     <h2 className="muted">
-                      പഴയ റിപ്പോർട്ടുകൾ <span className="nums">({olderMeetings.length}{hasMore ? '+' : ''})</span>
+                      പഴയ റിപ്പോർട്ടുകൾ
                     </h2>
                     <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <polyline points="6 9 12 15 18 9" />
