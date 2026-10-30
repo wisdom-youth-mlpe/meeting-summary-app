@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getAllMeetings, getMeetingReport, deleteMeeting, getSetting } from '../services/api';
+import { getAllMeetings, getMeetingReport, deleteMeeting } from '../services/api';
+import { loadMeetingDay, getReportingWeek } from '../services/week';
 import { getAccessibleZones, canEditMeetings, hasAnyRole, getUser, hasRole } from '../services/auth';
 import { filterMeetingsByZoneAccess } from '../services/zoneHelper';
 
@@ -11,7 +12,6 @@ const MeetingReport = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedMeetingData, setSelectedMeetingData] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [meetingDay, setMeetingDay] = useState(3); // Default to Wednesday
   const [weekRange, setWeekRange] = useState({ start: null, end: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
@@ -39,39 +39,7 @@ const MeetingReport = () => {
   }, []);
 
   const fetchMeetingDay = async () => {
-    try {
-      const response = await getSetting('district_meeting_day');
-      if (response.success && response.value !== null) {
-        const mDay = parseInt(response.value);
-        setMeetingDay(mDay);
-        calculateWeekRange(mDay);
-      } else {
-        calculateWeekRange(3);
-      }
-    } catch (e) {
-      calculateWeekRange(3);
-    }
-  };
-
-  const calculateWeekRange = (mDay) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const day = today.getDay();
-    let start = new Date(today);
-    let end = new Date(today);
-
-    if (day === mDay) {
-      // If today is the meeting day, we are analyzing the week that just finished
-      start.setDate(today.getDate() - 7);
-      end.setDate(today.getDate() - 1);
-    } else {
-      // Otherwise, we are in the current cycle starting from the most recent meeting day
-      const diff = (day - mDay + 7) % 7;
-      start.setDate(today.getDate() - diff);
-      end.setDate(start.getDate() + 6);
-    }
-    
-    setWeekRange({ start, end });
+    setWeekRange(getReportingWeek(await loadMeetingDay()));
   };
 
   useEffect(() => {

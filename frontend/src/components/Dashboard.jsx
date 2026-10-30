@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDashboardStats, getZones, getMeetingReport, getSetting } from '../services/api';
+import { getDashboardStats, getZones, getMeetingReport } from '../services/api';
+import { loadMeetingDay, getReportingWeek, toDateKey } from '../services/week';
 import { getUser, hasRole } from '../services/auth';
 import AttendanceSummary from './AttendanceSummary';
 
@@ -21,7 +22,8 @@ const Dashboard = () => {
     const [selectedReport, setSelectedReport] = useState(null);
     const [selectedMeetingData, setSelectedMeetingData] = useState(null);
     const [reportLoading, setReportLoading] = useState(false);
-    const [meetingDay, setMeetingDay] = useState(3); // Default to Wednesday
+    const [meetingDay, setMeetingDay] = useState(null);
+    const latestRequestRef = useRef(0);
 
     useEffect(() => {
         loadZones();
@@ -29,18 +31,9 @@ const Dashboard = () => {
     }, []);
 
     const fetchMeetingDay = async () => {
-        try {
-            const response = await getSetting('district_meeting_day');
-            if (response.success && response.value !== null) {
-                setMeetingDay(parseInt(response.value));
-                initializeDates('week', parseInt(response.value));
-            } else {
-                initializeDates('week', 3); // Fallback to Wednesday
-            }
-        } catch (e) {
-            console.error("Failed to fetch meeting day setting", e);
-            initializeDates('week', 3);
-        }
+        const day = await loadMeetingDay();
+        setMeetingDay(day);
+        initializeDates('week', day);
     };
 
     useEffect(() => {
@@ -74,42 +67,25 @@ const Dashboard = () => {
 
     const initializeDates = (filterType, targetDay = null) => {
         const today = new Date();
-        let start = new Date();
-        let end = new Date();
-        
-        const currentTargetDay = targetDay !== null ? targetDay : meetingDay;
+        let start = new Date(today);
+        let end = new Date(today);
 
         if (filterType === '7days') {
             start.setDate(today.getDate() - 7);
         } else if (filterType === 'week') {
-            // day: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-            const day = today.getDay();
-            
-            if (day === currentTargetDay) {
-                // If today is the meeting day, we are showing the week that just finished
-                start.setDate(today.getDate() - 7);
-                end.setDate(today.getDate() - 1);
-            } else {
-                // days since last target day
-                const diff = (day - currentTargetDay + 7) % 7;
-                start.setDate(today.getDate() - diff);
-                // end remains today
-            }
+            const day = targetDay !== null ? targetDay : meetingDay;
+            if (day === null) return; // meeting day still loading; fetchMeetingDay sets the week
+            // Same reporting week as the Reports tab
+            ({ start, end } = getReportingWeek(day, today));
         } else if (filterType === 'month') {
             start.setDate(1); // 1st of month
         } else if (filterType === 'custom') {
-            // Keep existing or default to month
+            // Keep existing dates
             return;
         }
 
-        const formatDateLocal = (d) => {
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        setStartDate(formatDateLocal(start));
-        setEndDate(formatDateLocal(end));
+        setStartDate(toDateKey(start));
+        setEndDate(toDateKey(end));
     };
 
     const handleDateFilterChange = (filter) => {
@@ -120,9 +96,12 @@ const Dashboard = () => {
     };
 
     const fetchStats = async () => {
+        // Only the newest request may update the screen; quick filter taps would otherwise race
+        const requestId = ++latestRequestRef.current;
         setLoading(true);
         try {
             const response = await getDashboardStats(startDate, endDate, selectedZone);
+            if (requestId !== latestRequestRef.current) return;
             if (response.success) {
                 setStats(response.data);
                 setError(null);
@@ -130,9 +109,10 @@ const Dashboard = () => {
                 setError('Failed to fetch data');
             }
         } catch (err) {
+            if (requestId !== latestRequestRef.current) return;
             setError(err.message || 'Error fetching dashboard data');
         } finally {
-            setLoading(false);
+            if (requestId === latestRequestRef.current) setLoading(false);
         }
     };
 
@@ -176,8 +156,8 @@ const Dashboard = () => {
 
     // --- Renderers ---
 
-    const CollapsibleCard = ({ title, children, defaultExpanded = true, className = "" }) => (
-        <details className={`card dash-collapsible collapsible ${className}`} open={defaultExpanded}>
+    const CollapsibleCard = ({ id, title, children, defaultExpanded = true, className = "" }) => (
+        <details id={id} className={`card dash-collapsible collapsible ${className}`} open={defaultExpanded}>
             <summary>
                 <h3>{title}</h3>
                 <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -265,23 +245,54 @@ const Dashboard = () => {
 
         // All Zones View - Show simplified dashboard
         if (selectedZone === 'All') {
+            const zonesMet = zonesWithMeetings?.length || 0;
+            const zoneTotal = zonesMet + noMeetingZones.length;
+            const showQhls = dateFilter === 'week' || dateFilter === '7days';
+            // Tapping a number opens its card below and brings it into view
+            const openCard = (cardId) => {
+                const card = document.getElementById(cardId);
+                if (!card) return;
+                card.open = true;
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+
             return (
                 <div className="dashboard-grid">
+                    <div className="dash-summary full-width">
+                        <button type="button" className="dash-stat" onClick={() => openCard('card-no-meeting')}>
+                            <span className="dash-stat-value nums">
+                                {zonesMet}<span className="dash-stat-of"> / {zoneTotal}</span>
+                            </span>
+                            <span className="dash-stat-label">മീറ്റിംഗ് നടന്ന മണ്ഡലങ്ങൾ</span>
+                        </button>
+                        {showQhls && (
+                            <button type="button" className={`dash-stat${qhlsMissingBranches?.length ? ' warn' : ''}`} onClick={() => openCard('card-qhls')}>
+                                <span className="dash-stat-value nums">{qhlsMissingBranches?.length || 0}</span>
+                                <span className="dash-stat-label">QHLS നടക്കാത്ത ശാഖകൾ</span>
+                            </button>
+                        )}
+                        <button type="button" className={`dash-stat${consecutiveAbsence.length ? ' warn' : ''}`} onClick={() => openCard('card-leaves')}>
+                            <span className="dash-stat-value nums">{consecutiveAbsence.length}</span>
+                            <span className="dash-stat-label">തുടർച്ചയായി 3 ലീവ്</span>
+                        </button>
+                    </div>
+
                     {/* Zones WITHOUT meetings */}
                     <CollapsibleCard 
+                        id="card-no-meeting"
                         className="full-width"
                         title={`${periodLabel} മീറ്റിംഗ് നടക്കാത്ത മണ്ഡലങ്ങൾ (${noMeetingZones.length})`}
                     >
                         {noMeetingZones.length === 0 ? (
                             <p className="empty-state success-text">എല്ലാ മണ്ഡലങ്ങളിലും മീറ്റിംഗ് നടന്നു!</p>
                         ) : (
-                            <ol className="zone-list warn-list">
+                            <div className="tags-container">
                                 {noMeetingZones.map(z => (
-                                    <li key={z.zoneName}>
+                                    <span key={z.zoneName} className="tag warn">
                                         {z.zoneName}{z.reason ? ` (${z.reason})` : ''}
-                                    </li>
+                                    </span>
                                 ))}
-                            </ol>
+                            </div>
                         )}
                     </CollapsibleCard>
 
@@ -359,6 +370,7 @@ const Dashboard = () => {
 
                     {/* Members with 3+ Consecutive Leaves */}
                     <CollapsibleCard 
+                        id="card-leaves"
                         className="full-width"
                         title="തുടർച്ചയായി 3 മീറ്റിംഗിൽ ലീവ് ആയ മെമ്പർമാർ"
                         defaultExpanded={false}
@@ -379,6 +391,7 @@ const Dashboard = () => {
                     {/* QHLS Missing Branches - Only show for week/7days filter */}
                     {(dateFilter === 'week' || dateFilter === '7days') && (
                         <CollapsibleCard 
+                            id="card-qhls"
                             className="full-width"
                             title="QHLS നടക്കാത്ത ശാഖകൾ"
                             defaultExpanded={false}
@@ -388,7 +401,7 @@ const Dashboard = () => {
                             ) : (
                                 <div className="tags-container">
                                     {qhlsMissingBranches.map((b, i) => (
-                                        <span key={i} className="tag warn">{b.branch}</span>
+                                        <span key={i} className="tag warn">{b.branch}{b.zone ? <span className="tag-sub"> · {b.zone}</span> : null}</span>
                                     ))}
                                 </div>
                             )}
@@ -469,7 +482,7 @@ const Dashboard = () => {
                     <div className="sub-text">in selected range</div>
                 </div>
                 <div className="card kpi-card">
-                    <h3>Active Members</h3>
+                    <h3>Attendees in range</h3>
                     <div className="number">{totalMembers}</div>
                 </div>
                 <div className="card kpi-card">
@@ -871,6 +884,47 @@ const Dashboard = () => {
                         box-shadow: none;
                         border: none;
                     }
+                }
+                .dash-summary {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                    gap: 6px;
+                }
+                .dash-stat {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+                    gap: 2px;
+                    padding: var(--space-md);
+                    background: var(--surface);
+                    color: var(--slate);
+                    text-align: left;
+                    font-weight: 400;
+                }
+                .dash-stat:hover {
+                    background: var(--gray-50);
+                }
+                .dash-stat-value {
+                    font-size: 1.9rem;
+                    font-weight: 700;
+                    font-variation-settings: 'wdth' 80;
+                    line-height: 1.1;
+                    color: var(--paddy-deep);
+                }
+                .dash-stat.warn .dash-stat-value {
+                    color: var(--clay);
+                }
+                .dash-stat-of {
+                    font-size: 1.1rem;
+                    color: var(--stone);
+                }
+                .dash-stat-label {
+                    font-size: 0.85rem;
+                    color: var(--stone);
+                }
+                .tag-sub {
+                    color: var(--stone);
+                    font-size: 0.85em;
                 }
                 .card.dash-collapsible {
                     padding: 0;
