@@ -122,10 +122,10 @@ const MeetingReport = () => {
         setSelectedMeetingData(response.meetingData);
         setSelectedReport(response.report);
       } else {
-        alert('റിപ്പോർട്ട് ലഭിക്കുന്നതിൽ പിശക് (Error fetching report)');
+        alert('റിപ്പോർട്ട് ലഭിക്കുന്നതിൽ പിശക്');
       }
     } catch (err) {
-      alert('റിപ്പോർട്ട് ലഭിക്കുന്നതിൽ പിശക് (Error fetching report): ' + err.message);
+      alert('റിപ്പോർട്ട് ലഭിക്കുന്നതിൽ പിശക്: ' + err.message);
     }
   };
 
@@ -149,10 +149,10 @@ const MeetingReport = () => {
         });
         // The form component will need to check for editMeetingData on mount
       } else {
-        alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക് (Error fetching meeting data)');
+        alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക്');
       }
     } catch (err) {
-      alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക് (Error fetching meeting data): ' + err.message);
+      alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക്: ' + err.message);
     }
   };
 
@@ -329,7 +329,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     navigator.clipboard.writeText(reportText).then(() => {
       alert('റിപ്പോർട്ട് കോപ്പി ചെയ്തു! (Report copied!)');
     }).catch(() => {
-      alert('കോപ്പി ചെയ്യുന്നതിൽ പിശക് (Error copying)');
+      alert('കോപ്പി ചെയ്യുന്നതിൽ പിശക്');
     });
   };
 
@@ -347,7 +347,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     return (
       <div className="container">
         <div className="loading">
-          ലോഡ് ചെയ്യുന്നു... (Loading...)
+          ലോഡ് ചെയ്യുന്നു...
         </div>
       </div>
     );
@@ -440,7 +440,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
   return (
     <div className="container">
       <div className="page-head">
-        <h1>മീറ്റിംഗ് റിപ്പോർട്ടുകൾ (Meeting Reports)</h1>
+        <h1>മീറ്റിംഗ് റിപ്പോർട്ടുകൾ</h1>
         {weekRange.start && weekRange.end && (
           <span className="week-tag nums">
             Reporting Week: {formatDateShort(weekRange.start)} - {formatDateShort(weekRange.end)}
@@ -502,20 +502,20 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
 
           {filteredMeetings.length === 0 ? (
             <div className="empty-note">
-              ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല (No meetings found)
+              ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല
             </div>
           ) : (
             <div>
               {weekMeetings.length > 0 && (
                 <section className="report-group">
-                  <h2>ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ (This Week)</h2>
+                  <h2>ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ</h2>
                   {renderMeetingsTable(weekMeetings)}
                 </section>
               )}
 
               {olderMeetings.length > 0 && (
                 <section className="report-group">
-                  <h2 className="muted">പഴയ റിപ്പോർട്ടുകൾ (Older Reports)</h2>
+                  <h2 className="muted">പഴയ റിപ്പോർട്ടുകൾ</h2>
                   {renderMeetingsTable(olderMeetings)}
                 </section>
               )}
@@ -527,7 +527,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
                   disabled={loadingMore}
                   className="btn-secondary load-more"
                 >
-                  {loadingMore ? 'ലോഡ് ചെയ്യുന്നു...' : 'കൂടുതൽ റിപ്പോർട്ടുകൾ കാണുക (Load More)'}
+                  {loadingMore ? 'ലോഡ് ചെയ്യുന്നു...' : 'കൂടുതൽ റിപ്പോർട്ടുകൾ കാണുക'}
                 </button>
               )}
             </div>
@@ -552,32 +552,32 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
           </div>
 
           <div className="report-container">
-            <CollapsibleSection title="മീറ്റിംഗ് വിവരങ്ങൾ (Meeting Details)">
+            <CollapsibleSection title="മീറ്റിംഗ് വിവരങ്ങൾ">
               <dl className="detail-list">
-                <dt>മണ്ഡലം (Zone)</dt><dd>{selectedMeetingData.zoneName}</dd>
-                <dt>തീയതി (Date)</dt><dd className="nums">{selectedMeetingData.date}</dd>
+                <dt>മണ്ഡലം</dt><dd>{selectedMeetingData.zoneName}</dd>
+                <dt>തീയതി</dt><dd className="nums">{selectedMeetingData.date}</dd>
                 {selectedMeetingData.startTime && (
-                  <><dt>തുടങ്ങിയ സമയം (Start Time)</dt><dd className="nums">{formatTime12h(selectedMeetingData.startTime)}</dd></>
+                  <><dt>തുടങ്ങിയ സമയം</dt><dd className="nums">{formatTime12h(selectedMeetingData.startTime)}</dd></>
                 )}
                 {selectedMeetingData.endTime && (
-                  <><dt>അവസാനിച്ച സമയം (End Time)</dt><dd className="nums">{formatTime12h(selectedMeetingData.endTime)}</dd></>
+                  <><dt>അവസാനിച്ച സമയം</dt><dd className="nums">{formatTime12h(selectedMeetingData.endTime)}</dd></>
                 )}
               </dl>
             </CollapsibleSection>
 
-            <CollapsibleSection title="പങ്കെടുത്തവർ (Attendees)">
+            <CollapsibleSection title="പങ്കെടുത്തവർ">
               <pre className="report-content">{selectedReport.attendees || 'ആരുമില്ല'}</pre>
             </CollapsibleSection>
 
-            <CollapsibleSection title="ലീവ് ആയവർ (Leave)">
+            <CollapsibleSection title="ലീവ് ആയവർ">
               <pre className="report-content">{selectedReport.leaveAayavar || 'ആരുമില്ല'}</pre>
             </CollapsibleSection>
 
-            <CollapsibleSection title="അജണ്ടകൾ (Agendas)">
+            <CollapsibleSection title="അജണ്ടകൾ">
               <pre className="report-content">{selectedReport.agenda || 'അജണ്ടകളില്ല'}</pre>
             </CollapsibleSection>
 
-            <CollapsibleSection title="തീരുമാനങ്ങൾ (Minutes)">
+            <CollapsibleSection title="തീരുമാനങ്ങൾ">
               <pre className="report-content">{selectedReport.minutes || 'തീരുമാനങ്ങളില്ല'}</pre>
             </CollapsibleSection>
 
