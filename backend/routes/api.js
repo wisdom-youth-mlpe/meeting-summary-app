@@ -650,6 +650,15 @@ router.get('/dashboard/stats', async (req, res) => {
 
     const zoneNames = allZones.map(z => z.name);
 
+    // A specific zone must be one the user can access
+    if (zoneId && zoneId !== 'All' && !zoneNames.includes(zoneId.trim())) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'You do not have access to this zone',
+      });
+    }
+
     // Filter by Zone if provided, OR filter by accessible zones if not admin
     let filteredMeetings = meetings;
     if (zoneId && zoneId !== 'All') {
@@ -700,9 +709,11 @@ router.get('/dashboard/stats', async (req, res) => {
       
       meetingAttendees.forEach(record => {
         const name = record.name;
+        // Same names are common across zones; a person is a name within a zone
+        const key = `${meeting.zoneName}::${name}`;
 
-        if (!personStats[name]) {
-          personStats[name] = {
+        if (!personStats[key]) {
+          personStats[key] = {
             name: name,
             present: 0,
             leave: 0,
@@ -714,17 +725,18 @@ router.get('/dashboard/stats', async (req, res) => {
           };
         }
 
-        personStats[name].total += 1;
+        const person = personStats[key];
+        person.total += 1;
 
         if (record.status === 'present') {
-          personStats[name].present += 1;
-          personStats[name].currentConsecutiveLeaves = 0;
-          personStats[name].lastAttendedDate = meeting.date;
+          person.present += 1;
+          person.currentConsecutiveLeaves = 0;
+          person.lastAttendedDate = meeting.date;
         } else if (record.status === 'leave') {
-          personStats[name].leave += 1;
-          personStats[name].currentConsecutiveLeaves += 1;
-          if (personStats[name].currentConsecutiveLeaves > personStats[name].maxConsecutiveLeaves) {
-            personStats[name].maxConsecutiveLeaves = personStats[name].currentConsecutiveLeaves;
+          person.leave += 1;
+          person.currentConsecutiveLeaves += 1;
+          if (person.currentConsecutiveLeaves > person.maxConsecutiveLeaves) {
+            person.maxConsecutiveLeaves = person.currentConsecutiveLeaves;
           }
         }
       });
@@ -732,6 +744,7 @@ router.get('/dashboard/stats', async (req, res) => {
 
     // Finalize Stats
     const summaryStats = Object.values(personStats).map(p => ({
+      zoneKey: `${p.zone}::${p.name}`,
       name: p.name,
       total: p.total,
       present: p.present,
@@ -742,17 +755,62 @@ router.get('/dashboard/stats', async (req, res) => {
       currentStreak: p.currentConsecutiveLeaves,
       lastAttended: p.lastAttendedDate,
       zone: p.zone
-    }));
+    }))
+      // Lowest attendance first: the people who need a call lead the register
+      .sort((a, b) => parseFloat(a.percentage) - parseFloat(b.percentage) || a.name.localeCompare(b.name));
 
-    // Consecutive Leave List (Current Streak >= 3)
-    const consecutiveLeaveList = summaryStats
-      .filter(p => p.currentStreak >= 3)
-      .map(p => ({
-        name: p.name,
-        zone: p.zone,
-        consecutiveLeaves: p.currentStreak,
-        lastAttendedDate: p.lastAttended
+    // Consecutive leaves: walk each zone's meetings newest first up to endDate,
+    // ignoring startDate, so a weekly view still sees a three-meeting streak
+    const scopeZones = zoneId && zoneId !== 'All' ? [zoneId.trim()] : zoneNames;
+    const historyMeetings = (await mongoService.getMeetingsByDateRange(undefined, endDate))
+      .filter(m => scopeZones.includes(m.zoneName))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.savedDate.localeCompare(a.savedDate));
+
+    const streaks = {};
+    historyMeetings.forEach(meeting => {
+      (meeting.attendance || []).forEach(record => {
+        const key = `${meeting.zoneName}::${record.name}`;
+        const streak = streaks[key] || (streaks[key] = {
+          name: record.name,
+          zone: meeting.zoneName,
+          leaves: 0,
+          closed: false,
+          lastAttendedDate: null,
+        });
+        if (streak.closed) return;
+        if (record.status === 'leave') {
+          streak.leaves += 1;
+        } else {
+          streak.closed = true;
+          if (record.status === 'present') streak.lastAttendedDate = meeting.date;
+        }
+      });
+    });
+
+    const consecutiveLeaveList = Object.values(streaks)
+      .filter(s => s.leaves >= 3)
+      .sort((a, b) => b.leaves - a.leaves || a.zone.localeCompare(b.zone))
+      .map(s => ({
+        name: s.name,
+        zone: s.zone,
+        consecutiveLeaves: s.leaves,
+        lastAttendedDate: s.lastAttendedDate
       }));
+
+    // QHLS not held: units marked നടന്നിട്ടില്ല in each zone's latest meeting in range.
+    // Meetings saved before QHLS statuses existed carry no status and are skipped.
+    const latestMeetingInRange = {};
+    filteredMeetings.forEach(m => {
+      const current = latestMeetingInRange[m.zoneName];
+      if (!current || m.date > current.date || (m.date === current.date && m.savedDate > current.savedDate)) {
+        latestMeetingInRange[m.zoneName] = m;
+      }
+    });
+    const qhlsMissingBranches = Object.values(latestMeetingInRange)
+      .flatMap(m => (m.qhls || [])
+        .filter(row => row.unit && row.status === 'nadannittilla')
+        .map(row => ({ branch: row.unit, zone: m.zoneName })))
+      .sort((a, b) => a.zone.localeCompare(b.zone) || a.branch.localeCompare(b.branch));
 
     // Latest Meeting Leaves
     let latestMeeting = null;
@@ -802,7 +860,7 @@ router.get('/dashboard/stats', async (req, res) => {
         meetingsList,
         attendanceRegister: summaryStats.slice(0, 50),
         totalMembers: summaryStats.length,
-        qhlsMissingBranches: [], // TODO: Implement QHLS tracking
+        qhlsMissingBranches,
         currentWeek: getWeekNumber(new Date(startDate || new Date())),
       }
     });
