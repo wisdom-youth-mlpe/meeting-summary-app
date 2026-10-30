@@ -425,6 +425,17 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     </ol>
   );
 
+  const renderLoadMore = () => (
+    <button
+      type="button"
+      onClick={handleLoadMore}
+      disabled={loadingMore}
+      className="btn-secondary load-more"
+    >
+      {loadingMore ? 'ലോഡ് ചെയ്യുന്നു...' : 'കൂടുതൽ റിപ്പോർട്ടുകൾ കാണുക'}
+    </button>
+  );
+
   const CollapsibleSection = ({ title, children, defaultExpanded = true }) => (
     <details className="report-section collapsible" open={defaultExpanded}>
       <summary>
@@ -514,22 +525,24 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
               )}
 
               {olderMeetings.length > 0 && (
-                <section className="report-group">
-                  <h2 className="muted">പഴയ റിപ്പോർട്ടുകൾ</h2>
-                  {renderMeetingsTable(olderMeetings)}
-                </section>
+                // Closed until needed; a search or date filter opens it so matches are visible
+                <details className="report-group collapsible" open={Boolean(searchTerm || filterDate)}>
+                  <summary>
+                    <h2 className="muted">
+                      പഴയ റിപ്പോർട്ടുകൾ <span className="nums">({olderMeetings.length}{hasMore ? '+' : ''})</span>
+                    </h2>
+                    <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </summary>
+                  <div className="collapsible-body">
+                    {renderMeetingsTable(olderMeetings)}
+                    {hasMore && renderLoadMore()}
+                  </div>
+                </details>
               )}
 
-              {hasMore && (
-                <button
-                  type="button"
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="btn-secondary load-more"
-                >
-                  {loadingMore ? 'ലോഡ് ചെയ്യുന്നു...' : 'കൂടുതൽ റിപ്പോർട്ടുകൾ കാണുക'}
-                </button>
-              )}
+              {olderMeetings.length === 0 && hasMore && renderLoadMore()}
             </div>
           )}
         </>
