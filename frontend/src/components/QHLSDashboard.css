@@ -1,4 +1,4 @@
-/* QHLS Dashboard — Monsoon, same light surfaces as the rest of the app */
+/* QHLS Dashboard — units per zone, grouped by this week's QHLS status */
 
 .qhls-dashboard {
     max-width: 1100px;
@@ -19,12 +19,6 @@
     margin: 0;
 }
 
-.week-selector {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 .week-selector select {
     width: auto;
 }
@@ -34,102 +28,72 @@
     color: var(--stone);
 }
 
-/* Error Message */
 .qhls-error {
     background: var(--rust-wash);
     color: var(--rust);
-    margin: 0 var(--space-lg) var(--space-md);
+    margin: var(--space-sm) var(--space-lg);
     padding: var(--space-md) var(--space-lg);
     border-radius: var(--radius-md);
 }
 
-/* Stats */
-.qhls-stats-grid {
+.qhls-loading,
+.qhls-empty-state {
+    text-align: center;
+    padding: var(--space-lg);
+    color: var(--stone);
+}
+
+/* Status colours, shared by tiles, group labels and chips */
+.held { --tone: var(--paddy-deep); --tone-wash: var(--paddy-wash); }
+.not-held { --tone: var(--clay); --tone-wash: var(--clay-wash); }
+.no-qhls { --tone: var(--slate); --tone-wash: var(--mist); }
+.not-reported { --tone: var(--stone); --tone-wash: var(--gray-50); }
+
+/* Week totals */
+.qhls-summary {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 6px;
     padding: var(--space-md) var(--space-lg);
 }
 
-.qhls-stat-card {
+.qhls-summary-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     background: var(--surface);
     border-radius: var(--radius-md);
-    padding: var(--space-md) var(--space-lg);
+    padding: var(--space-sm) var(--space-md);
+    box-shadow: inset 0 3px 0 var(--tone);
 }
 
-.qhls-stat-card.highlight {
-    background: var(--slate);
-    color: var(--surface);
-}
-
-.qhls-stat-value {
-    font-size: 1.8rem;
+.qhls-summary-value {
+    font-size: 1.7rem;
     font-weight: 700;
     font-variation-settings: 'wdth' 80;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.1;
+    line-height: 1.15;
+    color: var(--tone);
 }
 
-.qhls-stat-label {
-    font-size: 0.85rem;
+.qhls-summary-label {
+    font-size: 0.8rem;
     color: var(--stone);
+    line-height: 1.25;
 }
 
-.qhls-stat-card.highlight .qhls-stat-label {
-    color: rgba(255, 255, 255, 0.75);
+@media (max-width: 420px) {
+    .qhls-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-/* Missing Summary */
-.qhls-missing-summary {
-    margin: 0 var(--space-lg) var(--space-md);
-    padding: var(--space-md) var(--space-lg);
-    background: var(--clay-wash);
-    border-radius: var(--radius-md);
-}
-
-.qhls-missing-count {
-    color: var(--clay);
-    font-size: 1.4rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-}
-
-.qhls-missing-text {
-    color: var(--slate);
-}
-
-/* Tabs */
-.qhls-tab-nav {
-    display: flex;
-    gap: 6px;
-    padding: 0 var(--space-lg) var(--space-md);
-}
-
-.qhls-tab-btn {
-    flex: 1;
-    background: var(--surface);
-    color: var(--stone);
-    font-size: 0.95rem;
-}
-
-.qhls-tab-btn:hover {
-    background: var(--gray-50);
-}
-
-.qhls-tab-btn.active {
-    background: var(--slate);
-    color: var(--surface);
-}
-
-/* Actions Bar */
+/* Zone filter + refresh */
 .qhls-actions-bar {
     display: flex;
-    align-items: flex-end;
     gap: var(--space-sm);
     padding: 0 var(--space-lg) var(--space-md);
 }
 
-.qhls-actions-bar > label,
 .qhls-zone-filter {
     flex: 1;
 }
@@ -144,221 +108,75 @@
     background: var(--gray-50);
 }
 
-/* Zone groups */
-.qhls-cards-container {
-    padding: 0 var(--space-lg);
-}
-
-.qhls-zone-group {
-    background: var(--surface);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    margin-bottom: 6px;
-}
-
-.qhls-zone-header-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-md) var(--space-lg);
-    cursor: pointer;
-    min-height: var(--tap);
-}
-
-.qhls-zone-header-card:hover {
-    background: var(--gray-50);
-}
-
-.qhls-zone-header-card.expanded {
-    border-bottom: 1px solid var(--edge);
-}
-
-.qhls-zone-name {
-    display: block;
-    font-size: 1.1rem;
-    font-weight: 700;
-}
-
-.qhls-zone-count {
-    color: var(--stone);
-    font-size: 0.85rem;
-}
-
-.qhls-zone-toggle {
-    color: var(--stone);
-}
-
-.qhls-units-grid {
-    display: flex;
-    flex-direction: column;
-}
-
-.qhls-unit-row-card {
-    padding: var(--space-md) var(--space-lg);
-    border-bottom: 1px solid var(--mist);
-}
-
-.qhls-unit-row-card:last-child {
-    border-bottom: none;
-}
-
-.qhls-unit-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-sm);
-}
-
-.qhls-unit-name {
-    font-weight: 600;
-}
-
-.qhls-unit-date {
-    color: var(--stone);
-    font-size: 0.82rem;
-}
-
-.qhls-metrics-grid {
+/* Zone cards */
+.qhls-zone-list {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
-}
-
-.qhls-metric {
-    background: var(--mist);
-    padding: 6px 8px;
-    border-radius: var(--radius-sm);
-}
-
-.qhls-metric.total {
-    background: var(--paddy-wash);
-}
-
-.qhls-metric-label {
-    color: var(--stone);
-    font-size: 0.78rem;
-}
-
-.qhls-metric-row {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-}
-
-.qhls-metric-value {
-    font-size: 1.1rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-}
-
-.qhls-metric.total .qhls-metric-value {
-    color: var(--paddy-deep);
-}
-
-/* Week-on-week change */
-.qhls-variation {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0 5px;
-    border-radius: var(--radius-sm);
-}
-
-.qhls-variation.positive {
-    color: var(--paddy-deep);
-    background: var(--paddy-wash);
-}
-
-.qhls-variation.negative {
-    color: var(--rust);
-    background: var(--rust-wash);
-}
-
-.qhls-variation.first {
-    color: var(--slate);
-    background: var(--mist);
-}
-
-/* Empty State */
-.qhls-empty-state {
-    text-align: center;
-    padding: var(--space-xl) var(--space-lg);
-    color: var(--stone);
-}
-
-.qhls-empty-state.success {
-    color: var(--paddy-deep);
-    font-weight: 600;
-}
-
-/* Missing units */
-.qhls-missing-container {
     padding: 0 var(--space-lg);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
 }
 
-.qhls-missing-zone-card {
-    background: var(--surface);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-}
-
-.qhls-missing-zone-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-md) var(--space-lg);
-    border-bottom: 1px solid var(--mist);
-}
-
-.qhls-missing-zone-name {
-    font-weight: 700;
-}
-
-.qhls-missing-zone-count {
-    color: var(--clay);
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.qhls-missing-units-list {
-    padding: var(--space-sm) var(--space-lg);
-}
-
-.qhls-missing-unit-item {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--mist);
-}
-
-.qhls-missing-unit-item:last-child {
-    border-bottom: none;
-}
-
-.qhls-loading {
-    text-align: center;
-    padding: var(--space-xl) var(--space-lg);
-    color: var(--stone);
-}
-
-@media (min-width: 768px) {
-    .qhls-stats-grid {
-        grid-template-columns: repeat(4, 1fr);
-    }
-
-    .qhls-cards-container,
-    .qhls-missing-container {
-        display: grid;
+@media (min-width: 900px) {
+    .qhls-zone-list {
         grid-template-columns: repeat(2, 1fr);
-        gap: 6px;
         align-items: start;
     }
 }
 
-@media (min-width: 1024px) {
-    .qhls-cards-container,
-    .qhls-missing-container {
-        grid-template-columns: repeat(3, 1fr);
-    }
+.qhls-zone {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+}
+
+.qhls-zone summary {
+    padding: 6px var(--space-lg);
+}
+
+.qhls-zone-title {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.qhls-zone-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.qhls-zone-meta {
+    font-size: 0.85rem;
+    color: var(--stone);
+}
+
+.qhls-zone-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: 4px var(--space-lg) var(--space-lg);
+}
+
+.qhls-group-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--tone);
+}
+
+.qhls-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.qhls-chip {
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--tone-wash);
+    color: var(--tone);
+    font-size: 0.92rem;
+}
+
+.qhls-chip.not-reported {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--edge);
 }

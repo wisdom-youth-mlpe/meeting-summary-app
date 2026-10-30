@@ -614,6 +614,18 @@ router.get('/attendance-summary', async (req, res) => {
   }
 });
 
+// Zones a user may see: admins all, district admins their districts, zone admins their zones
+const filterZonesForUser = (zones, user) => {
+  if (user.roles.includes('admin')) return zones;
+  if (user.roles.includes('district_admin')) {
+    return zones.filter(z => user.districtAccess && user.districtAccess.includes(z.districtId));
+  }
+  if (user.roles.includes('zone_admin')) {
+    return zones.filter(z => user.zoneAccess && user.zoneAccess.includes(z.id));
+  }
+  return zones;
+};
+
 /**
  * GET /api/dashboard/stats
  * Get aggregated dashboard statistics
@@ -633,20 +645,9 @@ router.get('/dashboard/stats', async (req, res) => {
     // 1. Fetch meetings in range
     const meetings = await mongoService.getMeetingsByDateRange(startDate, endDate);
     
-    // 2. Fetch all zones
-    let allZones = await mongoService.getZones();
-    
-    // Filter zones based on user access
+    // 2. Fetch the zones this user may see
     const user = req.user;
-    if (!user.roles.includes('admin')) {
-      if (user.roles.includes('district_admin')) {
-        // District admin - filter by districtAccess
-        allZones = allZones.filter(z => user.districtAccess && user.districtAccess.includes(z.districtId));
-      } else if (user.roles.includes('zone_admin')) {
-        // Zone admin - filter by zoneAccess
-        allZones = allZones.filter(z => user.zoneAccess && user.zoneAccess.includes(z.id));
-      }
-    }
+    const allZones = filterZonesForUser(await mongoService.getZones(), user);
 
     const zoneNames = allZones.map(z => z.name);
 
@@ -1209,6 +1210,36 @@ router.get('/qhls/dashboard', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch QHLS dashboard data',
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/qhls/week-status?weekOffset=0
+ * Units of each accessible zone grouped by QHLS status for one reporting week
+ */
+router.get('/qhls/week-status', async (req, res) => {
+  try {
+    if (!isMongoConnected()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database not available',
+        message: 'MongoDB is not connected',
+      });
+    }
+
+    const weekOffset = parseInt(req.query.weekOffset) || 0;
+    const zones = filterZonesForUser(await mongoService.getZones(), req.user);
+    const meetingDay = parseInt(await mongoService.getSetting('district_meeting_day', 3), 10);
+    const data = await qhlsService.getWeekStatus(weekOffset, meetingDay, zones);
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Error in /api/qhls/week-status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch QHLS week status',
       message: error.message,
     });
   }
