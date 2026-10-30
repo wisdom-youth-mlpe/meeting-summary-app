@@ -1585,6 +1585,7 @@ input[type="checkbox"] {
 
 .report-card[open] .report-card-body,
 .filter-panel[open] .filter-bar,
+.filter-panel[open] .dashboard-controls,
 .collapsible[open] .collapsible-body,
 .collapsible[open] .dash-collapsible-body,
 .add-extra[open] .add-extra-fields {
@@ -1615,4 +1616,8 @@ input[type="checkbox"] {
 .collapsible summary:active,
 .add-extra summary:active {
   transform: scale(0.99);
+}
+
+.filter-panel .dashboard-controls {
+  margin-bottom: 0;
 }

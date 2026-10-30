@@ -168,7 +168,20 @@ const Dashboard = () => {
         </details>
     );
 
+    const filterActive = dateFilter !== 'week' || selectedZone !== 'All';
+
     const renderControls = () => (
+        <details className="filter-panel">
+            <summary>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+                Filter
+                {filterActive && <span className="filter-dot" aria-label="Filter on" />}
+                <svg className="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </summary>
         <div className="dashboard-controls">
             <div className="control-group">
                 <label>Date Range:</label>
@@ -224,6 +237,7 @@ const Dashboard = () => {
                 <button className="refresh-btn" onClick={fetchStats}>Refresh</button>
             </div>
         </div>
+        </details>
     );
 
     const renderOverview = () => {
