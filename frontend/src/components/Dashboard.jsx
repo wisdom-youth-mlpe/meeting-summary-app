@@ -738,11 +738,6 @@ const Dashboard = () => {
                     <div className="week-tag nums">
                         Reporting Week: {formatDateShort(startDate)} - {formatDateShort(endDate)}
                     </div>
-                    {stats?.currentWeek && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--stone)', marginTop: '4px' }}>
-                            Week {stats.currentWeek}
-                        </div>
-                    )}
                 </div>
             )}
             {dateFilter === 'month' && (
