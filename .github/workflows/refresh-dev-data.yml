@@ -4,7 +4,8 @@
 # dev.meeting.wisdommlpe.site shows the same data as production.
 #
 # - Production is only read (mongodump); nothing is written to it.
-# - The dev database is backed up first, then replaced.
+# - The dev database is backed up first; each production collection then
+#   replaces its dev counterpart. Collections only dev has are left alone.
 # - Database locations come from the server's own env files:
 #     /srv/apps/meeting-summary/.env           (production)
 #     /srv/apps/meeting-summary-dev/.env.dev   (dev)
@@ -124,10 +125,10 @@ jobs:
             [ -s "$BACKUP_DIR/dev-$STAMP.archive.gz" ] || { echo "Dev backup is empty. Stopping."; exit 1; }
             [ -s "$PROD_DUMP" ] || { echo "Production dump is empty. Stopping."; exit 1; }
 
-            # Exact mirror: clear dev, then restore production under the dev name
-            docker run --rm --network "$DEV_NET" "$TOOLS_IMAGE" mongosh "$DEV_URI" --quiet --eval 'db.dropDatabase()'
+            # Restore production under the dev name; --drop replaces each collection.
+            # The dev user may not drop the whole database, so dev-only collections stay.
             docker run --rm -i --network "$DEV_NET" "$TOOLS_IMAGE" \
-              mongorestore --uri="$DEV_URI" --gzip --archive \
+              mongorestore --uri="$DEV_URI" --gzip --archive --drop \
               --nsFrom="$PROD_DB.*" --nsTo="$DEV_DB.*" < "$PROD_DUMP"
 
             echo "Dev collections (after):"; count_docs "$DEV_URI" "$DEV_NET"
