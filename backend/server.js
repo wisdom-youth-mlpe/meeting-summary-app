@@ -57,7 +57,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Http Request Logging
-app.use(morgan('combined'));
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan('combined'));
+}
 
 // Rate Limiting Config
 const apiLimiter = rateLimit({
@@ -139,4 +141,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Tests import the app without connecting or listening
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = app;
