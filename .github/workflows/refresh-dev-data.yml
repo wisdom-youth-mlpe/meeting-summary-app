@@ -106,23 +106,29 @@ jobs:
 
             mkdir -p "$BACKUP_DIR"
             STAMP=$(date +%Y-%m-%d_%H-%M-%S)
+            # Dumps stream through stdout so the host shell writes the files;
+            # the container never needs write access to a host folder
             echo "Backing up dev to $BACKUP_DIR/dev-$STAMP.archive.gz"
-            docker run --rm --network "$DEV_NET" -v "$BACKUP_DIR:/backup" "$TOOLS_IMAGE" \
-              mongodump --uri="$DEV_URI" --gzip --archive="/backup/dev-$STAMP.archive.gz" --quiet
+            docker run --rm --network "$DEV_NET" "$TOOLS_IMAGE" \
+              mongodump --uri="$DEV_URI" --gzip --archive > "$BACKUP_DIR/dev-$STAMP.archive.gz"
             # Keep the five newest dev backups
             ls -1t "$BACKUP_DIR"/dev-*.archive.gz | tail -n +6 | xargs -r rm -f
 
             echo "Copying production into dev"
-            TMP=$(mktemp -d)
-            trap 'rm -rf "$TMP"' EXIT
-            docker run --rm --network "$PROD_NET" -v "$TMP:/work" "$TOOLS_IMAGE" \
-              mongodump --uri="$PROD_URI" --gzip --archive=/work/prod.archive.gz --quiet
+            PROD_DUMP=$(mktemp)
+            trap 'rm -f "$PROD_DUMP"' EXIT
+            docker run --rm --network "$PROD_NET" "$TOOLS_IMAGE" \
+              mongodump --uri="$PROD_URI" --gzip --archive > "$PROD_DUMP"
+
+            # Never clear dev without a backup and a production copy in hand
+            [ -s "$BACKUP_DIR/dev-$STAMP.archive.gz" ] || { echo "Dev backup is empty. Stopping."; exit 1; }
+            [ -s "$PROD_DUMP" ] || { echo "Production dump is empty. Stopping."; exit 1; }
 
             # Exact mirror: clear dev, then restore production under the dev name
             docker run --rm --network "$DEV_NET" "$TOOLS_IMAGE" mongosh "$DEV_URI" --quiet --eval 'db.dropDatabase()'
-            docker run --rm --network "$DEV_NET" -v "$TMP:/work" "$TOOLS_IMAGE" \
-              mongorestore --uri="$DEV_URI" --gzip --archive=/work/prod.archive.gz \
-              --nsFrom="$PROD_DB.*" --nsTo="$DEV_DB.*" --quiet
+            docker run --rm -i --network "$DEV_NET" "$TOOLS_IMAGE" \
+              mongorestore --uri="$DEV_URI" --gzip --archive \
+              --nsFrom="$PROD_DB.*" --nsTo="$DEV_DB.*" < "$PROD_DUMP"
 
             echo "Dev collections (after):"; count_docs "$DEV_URI" "$DEV_NET"
             echo "Done."
