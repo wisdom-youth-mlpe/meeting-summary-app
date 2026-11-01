@@ -8,3 +8,4 @@ Dockerfile
 Dockerfile.local
 *.md
 .vscode
+tests

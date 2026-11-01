@@ -20,97 +20,13 @@ const AgendaSelector = ({ agendas, selectedAgendas, onAgendaAdd, onAgendaRemove 
     }
   };
 
-  const styles = {
-    inputRow: {
-      display: 'flex',
-      gap: '10px',
-      marginBottom: '16px',
-    },
-    input: {
-      flex: 1,
-      padding: '14px 18px',
-      border: '2px solid #e0e0e0',
-      borderRadius: '12px',
-      fontSize: '1rem',
-      transition: 'all 0.2s ease',
-    },
-    addBtn: {
-      padding: '10px 16px',
-      background: 'linear-gradient(135deg, #6c5ce7, #5549c7)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '12px',
-      fontSize: '1.5rem',
-      fontWeight: '700',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      width: '48px',
-      lineHeight: '1',
-      flexShrink: 0,
-    },
-    addBtnDisabled: {
-      background: '#bdbdbd',
-      cursor: 'not-allowed',
-    },
-    agendaList: {
-      marginTop: '12px',
-    },
-    agendaItem: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '14px 16px',
-      marginBottom: '8px',
-      background: '#ffffff',
-      border: '2px solid #e0e0e0',
-      borderRadius: '12px',
-      transition: 'all 0.2s ease',
-    },
-    number: {
-      minWidth: '32px',
-      height: '32px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #6c5ce7, #5549c7)',
-      color: 'white',
-      borderRadius: '50%',
-      fontSize: '0.85rem',
-      fontWeight: '700',
-      marginRight: '14px',
-    },
-    text: {
-      flex: 1,
-      fontSize: '0.95rem',
-      color: '#424242',
-    },
-    removeBtn: {
-      padding: '8px',
-      background: 'transparent',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: '8px',
-      transition: 'all 0.2s ease',
-    },
-    emptyState: {
-      textAlign: 'center',
-      padding: '24px',
-      color: '#9e9e9e',
-      fontStyle: 'italic',
-      background: '#f5f5f5',
-      borderRadius: '12px',
-      border: '2px dashed #e0e0e0',
-    },
-  };
-
   return (
     <div className="form-group">
-      <label>അജണ്ടകൾ</label>
+      <label htmlFor="agenda-input">അജണ്ടകൾ</label>
 
-      <div style={styles.inputRow}>
+      <div className="agenda-selector">
         <input
+          id="agenda-input"
           key={resetKey}
           type="text"
           value={selectedAgenda}
@@ -118,7 +34,6 @@ const AgendaSelector = ({ agendas, selectedAgendas, onAgendaAdd, onAgendaRemove 
           onKeyPress={handleKeyPress}
           list="agenda-options"
           placeholder="അജണ്ട ചേർക്കുക..."
-          style={styles.input}
         />
         {agendas && agendas.length > 0 && (
           <datalist id="agenda-options">
@@ -131,55 +46,50 @@ const AgendaSelector = ({ agendas, selectedAgendas, onAgendaAdd, onAgendaRemove 
           type="button"
           onClick={handleAddAgenda}
           disabled={!selectedAgenda.trim()}
-          style={{
-            ...styles.addBtn,
-            ...(selectedAgenda.trim() ? {} : styles.addBtnDisabled),
-            fontSize: window.innerWidth <= 640 ? '1.2rem' : '1.5rem',
-          }}
           aria-label="അജണ്ട ചേർക്കുക"
         >
-          +
+          <PlusIcon />
         </button>
       </div>
 
       {selectedAgendas.length > 0 ? (
-        <div style={styles.agendaList}>
+        <div>
           {selectedAgendas.map((agenda, index) => (
-            <div key={index} style={styles.agendaItem}>
-              <span style={styles.number}>{index + 1}</span>
-              <span style={styles.text}>{agenda}</span>
+            <div key={index} className="row-item">
+              <span className="row-num nums">{index + 1}</span>
+              <span className="row-name" style={{ flex: 1 }}>{agenda}</span>
               <button
                 type="button"
                 onClick={() => onAgendaRemove(index)}
-                style={styles.removeBtn}
+                className="icon-btn"
                 aria-label={`${agenda} നീക്കം ചെയ്യുക`}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#ff7675"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
+                <CloseIcon />
               </button>
             </div>
           ))}
         </div>
       ) : (
-        <div style={styles.emptyState}>
+        <div className="empty-note">
           അജണ്ടകൾ ചേർക്കുക
         </div>
       )}
     </div>
   );
 };
+
+export const PlusIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+export const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
 
 export default AgendaSelector;

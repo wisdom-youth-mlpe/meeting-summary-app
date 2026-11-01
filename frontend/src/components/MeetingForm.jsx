@@ -15,14 +15,14 @@ const FORM_STORAGE_KEY = 'meetingFormDraft';
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
 // Older meetings have no status; derive it from the checkbox and detail fields they stored
-const deriveQhlsStatus = (row) => {
+export const deriveQhlsStatus = (row) => {
   if (row.status) return row.status;
   if (row.hasQhls === false) return 'illa';
   if (row.day || row.faculty || parseInt(row.male, 10) || parseInt(row.female, 10)) return 'nadannu';
   return '';
 };
 
-const buildQhlsRows = (units = [], existingData = []) => {
+export const buildQhlsRows = (units = [], existingData = []) => {
   const defaultQhlsRow = { unit: '', status: '', hasQhls: true };
   const toRow = (row) => ({ ...defaultQhlsRow, ...row, status: deriveQhlsStatus(row) });
 
@@ -100,6 +100,7 @@ const MeetingForm = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingMeetingId, setEditingMeetingId] = useState(null);
   const [carriedIllaUnits, setCarriedIllaUnits] = useState([]);
+  const [qhlsHighlightMissing, setQhlsHighlightMissing] = useState(false);
   const [lastMeetingRefresh, setLastMeetingRefresh] = useState(0);
   const attendanceDraftRef = useRef(null);
   const qhlsDraftRef = useRef(null);
@@ -213,10 +214,8 @@ const MeetingForm = () => {
           const agendaItems = (response.agendas || [])
             .map((item) => (typeof item === 'string' ? item.trim() : ''))
             .filter((item, index, arr) => item && arr.indexOf(item) === index);
+          // Stored agendas are suggestions only; a new meeting starts with none selected
           setAgendas(agendaItems);
-          if (!selectedAgendasHydratedRef.current) {
-            setSelectedAgendas(agendaItems);
-          }
         }
       } catch (err) {
         console.error('Error fetching agendas:', err);
@@ -328,12 +327,9 @@ const MeetingForm = () => {
       );
       if (draftAgendas.length) {
         setSelectedAgendas(draftAgendas);
-        selectedAgendasHydratedRef.current = true;
-        return;
       }
     }
 
-    setSelectedAgendas(agendas);
     selectedAgendasHydratedRef.current = true;
   }, [agendas, draftHydrated]);
 
@@ -1159,10 +1155,13 @@ const MeetingForm = () => {
     // Validate QHLS data - every unit still listed needs a status
     const qhlsWithoutStatus = qhlsData.find(row => row.unit && !row.status);
     if (qhlsWithoutStatus) {
+      setQhlsHighlightMissing(true);
+      document.getElementById('qhls-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       alert(`ദയവായി ${qhlsWithoutStatus.unit} യൂണിറ്റിന്റെ QHLS സ്റ്റാറ്റസ് തിരഞ്ഞെടുക്കുക`);
       return;
     }
 
+    setQhlsHighlightMissing(false);
     setSubmitting(true);
 
     try {
@@ -1277,8 +1276,9 @@ const MeetingForm = () => {
           />
         </div>
 
+        <div className="form-row-2">
         <div className="form-group">
-          <label htmlFor="startTime">തുടങ്ങിയ സമയം: <span style={{ color: 'red' }}>*</span></label>
+          <label htmlFor="startTime">തുടങ്ങിയ സമയം: <span className="req">*</span></label>
           <input
             type="time"
             id="startTime"
@@ -1289,7 +1289,7 @@ const MeetingForm = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="endTime">അവസാനിച്ച സമയം: <span style={{ color: 'red' }}>*</span></label>
+          <label htmlFor="endTime">അവസാനിച്ച സമയം: <span className="req">*</span></label>
           <input
             type="time"
             id="endTime"
@@ -1297,6 +1297,7 @@ const MeetingForm = () => {
             onChange={(e) => setEndTime(e.target.value)}
             required
           />
+        </div>
         </div>
 
         <AgendaSelector
@@ -1331,12 +1332,13 @@ const MeetingForm = () => {
         <QHLSTable
           qhlsData={qhlsData}
           onQHLSChange={handleQHLSChange}
+          highlightMissing={qhlsHighlightMissing}
         />
 
         {/* Meeting Roles Section */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+        <div className="form-row-3">
           <div className="form-group">
-            <label htmlFor="swagatham">സ്വാഗതം: <span style={{ color: 'red' }}>*</span></label>
+            <label htmlFor="swagatham">സ്വാഗതം: <span className="req">*</span></label>
             <select
               id="swagatham"
               value={swagatham}
@@ -1352,7 +1354,7 @@ const MeetingForm = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="adhyakshan">അധ്യക്ഷൻ: <span style={{ color: 'red' }}>*</span></label>
+            <label htmlFor="adhyakshan">അധ്യക്ഷൻ: <span className="req">*</span></label>
             <select
               id="adhyakshan"
               value={adhyakshan}
@@ -1368,7 +1370,7 @@ const MeetingForm = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="nandhi">നന്ദി: <span style={{ color: 'red' }}>*</span></label>
+            <label htmlFor="nandhi">നന്ദി: <span className="req">*</span></label>
             <select
               id="nandhi"
               value={nandhi}
@@ -1403,7 +1405,7 @@ const MeetingForm = () => {
           <div className="report-preview-content">
             <div className="report-preview-header">
               <h2>റിപ്പോർട്ട് പ്രിവ്യൂ</h2>
-              <button onClick={handleClosePreview} className="close-button">×</button>
+              <button onClick={handleClosePreview} className="close-button" aria-label="Close">×</button>
             </div>
 
             <div className="report-preview-body">
@@ -1459,10 +1461,10 @@ const MeetingForm = () => {
 
             <div className="report-preview-actions">
               <button onClick={handleCopyToWhatsApp} className="btn-secondary">
-                📱 വാട്സാപ്പിലേക്ക് കോപ്പി ചെയ്യുക
+                വാട്സാപ്പിലേക്ക് കോപ്പി ചെയ്യുക
               </button>
               <button onClick={handleSaveAsPDF} className="btn-success">
-                📄 PDF ആയി സേവ് ചെയ്യുക
+                PDF ആയി സേവ് ചെയ്യുക
               </button>
               <button onClick={handleClosePreview} className="btn-secondary">
                 Close
@@ -1474,39 +1476,9 @@ const MeetingForm = () => {
 
       {/* Loading Overlay */}
       {submitting && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-        }}>
-          <div style={{
-            width: '60px',
-            height: '60px',
-            border: '5px solid #f3f3f3',
-            borderTop: '5px solid #3498db',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-          }}></div>
-          <p style={{
-            color: 'white',
-            marginTop: '20px',
-            fontSize: '18px',
-            fontWeight: '600',
-          }}>സേവ് ചെയ്യുന്നു...</p>
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
+        <div className="saving-overlay" role="status">
+          <div className="saving-spinner"></div>
+          <p>സേവ് ചെയ്യുന്നു...</p>
         </div>
       )}
     </div>

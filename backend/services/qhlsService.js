@@ -7,6 +7,15 @@ const Meeting = require('../models/Meeting');
 const Zone = require('../models/Zone');
 const Unit = require('../models/Unit');
 
+// Status of one saved QHLS row. Rows saved before statuses existed carry the
+// checkbox and counts instead; read those the way the meeting form does.
+const rowStatus = (row) => {
+  if (row.status) return row.status;
+  if (row.hasQhls === false) return 'illa';
+  if (row.day || row.faculty || parseInt(row.male, 10) || parseInt(row.female, 10)) return 'nadannu';
+  return '';
+};
+
 class QHLSService {
   /**
    * Get the week boundaries (Wednesday to Tuesday) for a given date
@@ -201,6 +210,86 @@ class QHLSService {
       stats,
       missing,
     };
+  }
+
+  /**
+   * First and last day (YYYY-MM-DD) of a reporting week
+   * @param {number} meetingDay - district meeting day, 0 = Sunday
+   * @param {number} weekOffset - 0 for this week, -1 for last week
+   */
+  getReportingWeek(meetingDay, weekOffset = 0) {
+    // Same rule as the frontend's services/week.js: weeks start on the meeting day,
+    // and on the meeting day itself the week that just finished is reported
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    const diff = base.getDay() === meetingDay ? 7 : (base.getDay() - meetingDay + 7) % 7;
+    const start = new Date(base);
+    start.setDate(base.getDate() - diff + weekOffset * 7);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return { weekStart: key(start), weekEnd: key(end) };
+  }
+
+  /**
+   * Every unit of every accessible zone for one reporting week, grouped by its
+   * QHLS status. When a zone met more than once, each unit takes the most recent
+   * status any of that week's meetings recorded for it.
+   * @param {number} weekOffset - 0 for this week, -1 for last week
+   * @param {number} meetingDay - district meeting day, 0 = Sunday
+   * @param {Array<{id, name}>} zones - zones the user may see
+   */
+  async getWeekStatus(weekOffset, meetingDay, zones) {
+    const { weekStart, weekEnd } = this.getReportingWeek(meetingDay, weekOffset);
+    const zoneNames = zones.map(z => z.name);
+
+    const [meetings, units] = await Promise.all([
+      Meeting.find({ date: { $gte: weekStart, $lte: weekEnd }, zoneName: { $in: zoneNames } })
+        .sort({ date: -1, createdAt: -1 }),
+      Unit.find({ zoneId: { $in: zones.map(z => z.id) } }).sort({ name: 1 }),
+    ]);
+
+    // Meetings arrive newest first, so the first status seen for a unit is the latest
+    const statusesByZone = {};
+    const meetingDateByZone = {};
+    meetings.forEach(m => {
+      if (!meetingDateByZone[m.zoneName]) meetingDateByZone[m.zoneName] = m.date;
+      const statuses = statusesByZone[m.zoneName] || (statusesByZone[m.zoneName] = new Map());
+      (m.qhls || []).forEach(row => {
+        const unit = (row.unit || '').trim();
+        const status = rowStatus(row);
+        if (unit && status && !statuses.has(unit)) statuses.set(unit, status);
+      });
+    });
+
+    const totals = { held: 0, notHeld: 0, noQhls: 0, notReported: 0, units: 0 }
+
+    const zoneRows = zones.map(zone => {
+      const groups = { held: [], notHeld: [], noQhls: [], notReported: [] };
+      const statusByUnit = statusesByZone[zone.name] || new Map();
+
+      // Units on record for the zone, plus any unit the meeting itself listed
+      const unitNames = units.filter(u => u.zoneId === zone.id).map(u => u.name.trim());
+      statusByUnit.forEach((_, unit) => {
+        if (!unitNames.includes(unit)) unitNames.push(unit);
+      });
+
+      unitNames.forEach(unit => {
+        const status = statusByUnit.get(unit);
+        if (status === 'nadannu') groups.held.push(unit);
+        else if (status === 'nadannittilla') groups.notHeld.push(unit);
+        else if (status === 'illa') groups.noQhls.push(unit);
+        else groups.notReported.push(unit);
+      });
+
+      Object.keys(groups).forEach(k => { totals[k] += groups[k].length; });
+      totals.units += unitNames.length;
+
+      return { zone: zone.name, meetingDate: meetingDateByZone[zone.name] || null, ...groups };
+    });
+
+    return { weekStart, weekEnd, zones: zoneRows, totals };
   }
 }
 

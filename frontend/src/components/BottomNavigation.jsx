@@ -133,62 +133,8 @@ const BottomNavigation = () => {
         return location.pathname === path;
     };
 
-    const styles = {
-        container: {
-            position: 'fixed',
-            bottom: '24px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'calc(100% - 32px)',
-            maxWidth: '500px',
-            height: '72px',
-            background: 'var(--accent)',
-            borderRadius: 'var(--radius-full)',
-            boxShadow: 'var(--shadow-lg)',
-            display: 'flex',
-            justifyContent: 'space-around',
-            alignItems: 'center',
-            padding: '0 12px',
-            zIndex: 1000,
-            border: '1px solid rgba(255, 255, 255, 0.05)',
-        },
-        tab: (active) => ({
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '4px',
-            padding: '8px 4px',
-            cursor: 'pointer',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            color: active ? 'var(--primary)' : 'var(--gray-400)',
-            background: 'transparent',
-            border: 'none',
-            fontFamily: 'Inter, Anek Malayalam, sans-serif',
-            minWidth: '50px',
-            flex: 1,
-            position: 'relative',
-        }),
-        iconWrapper: (active) => ({
-            width: '24px',
-            height: '24px',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            transform: active ? 'scale(1.2)' : 'scale(1)',
-            filter: active ? 'drop-shadow(0 0 8px rgba(163, 230, 53, 0.4))' : 'none',
-        }),
-        label: (active) => ({
-            fontSize: '0.55rem',
-            fontWeight: active ? '800' : '500',
-            transition: 'all 0.4s ease',
-            whiteSpace: 'nowrap',
-            opacity: active ? 1 : 0.7,
-            textTransform: 'uppercase',
-            letterSpacing: '0.02em',
-        }),
-    };
-
     return (
-        <nav style={styles.container}>
+        <nav className="bottom-nav" aria-label="Main">
             {tabs.map((tab) => {
                 const active = isActive(tab.path);
                 const IconComponent = tab.icon;
@@ -196,15 +142,13 @@ const BottomNavigation = () => {
                 return (
                     <button
                         key={tab.id}
+                        type="button"
                         onClick={() => handleTabClick(tab.path)}
-                        style={styles.tab(active)}
-                        aria-label={tab.label}
+                        className={`bottom-nav-tab${active ? ' active' : ''}`}
                         aria-current={active ? 'page' : undefined}
                     >
-                        <div style={styles.iconWrapper(active)}>
-                            <IconComponent />
-                        </div>
-                        <span style={styles.label(active)}>{tab.label}</span>
+                        <IconComponent />
+                        <span>{tab.label}</span>
                     </button>
                 );
             })}

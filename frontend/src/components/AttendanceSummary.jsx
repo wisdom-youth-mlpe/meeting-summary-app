@@ -131,7 +131,7 @@ const AttendanceSummary = ({ zoneId, startDate, endDate }) => {
                     border-radius: 12px;
                     padding: 20px;
                     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-                    border: 1px solid #eee;
+                    border: 1px solid var(--edge);
                 }
 
                 .summary-header {
@@ -145,7 +145,7 @@ const AttendanceSummary = ({ zoneId, startDate, endDate }) => {
 
                 .summary-header h3 {
                     margin: 0;
-                    color: #2c3e50;
+                    color: var(--slate);
                 }
 
                 .legend {
@@ -159,7 +159,7 @@ const AttendanceSummary = ({ zoneId, startDate, endDate }) => {
                     align-items: center;
                     gap: 8px;
                     font-size: 0.9rem;
-                    color: #555;
+                    color: var(--stone);
                     font-weight: 500;
                 }
 
@@ -176,11 +176,11 @@ const AttendanceSummary = ({ zoneId, startDate, endDate }) => {
 
                 .attendance-summary-placeholder,
                 .attendance-summary-empty {
-                    background: #f8f9fa;
+                    background: var(--gray-50);
                     border-radius: 12px;
                     padding: 40px;
                     text-align: center;
-                    color: #666;
+                    color: var(--stone);
                 }
 
                 .table-responsive {
@@ -199,13 +199,13 @@ const AttendanceSummary = ({ zoneId, startDate, endDate }) => {
                 .attendance-table td {
                     padding: 12px 8px;
                     text-align: center;
-                    border-bottom: 1px solid #eee;
+                    border-bottom: 1px solid var(--edge);
                 }
 
                 .attendance-table th {
-                    background: #f8f9fa;
+                    background: var(--gray-50);
                     font-weight: 600;
-                    color: #555;
+                    color: var(--stone);
                     font-size: 0.85rem;
                     text-transform: uppercase;
                     white-space: nowrap;
@@ -237,39 +237,39 @@ const AttendanceSummary = ({ zoneId, startDate, endDate }) => {
 
                 .attendee-name {
                     font-weight: 500;
-                    color: #2c3e50;
+                    color: var(--slate);
                 }
 
                 .attendee-role {
                     font-size: 0.75rem;
-                    color: #888;
+                    color: var(--stone);
                     margin-top: 2px;
                 }
 
                 .status-present {
-                    background: #d4edda !important;
-                    color: #155724 !important;
+                    background: var(--paddy-wash) !important;
+                    color: var(--paddy-deep) !important;
                 }
 
                 .status-leave {
-                    background: #fff3cd !important;
-                    color: #856404 !important;
+                    background: var(--clay-wash) !important;
+                    color: var(--clay) !important;
                 }
 
                 .status-absent {
-                    background: #f8d7da !important;
-                    color: #721c24 !important;
+                    background: var(--rust-wash) !important;
+                    color: var(--rust) !important;
                 }
 
                 .status-none {
-                    background: #e9ecef !important;
-                    color: #6c757d !important;
+                    background: var(--edge) !important;
+                    color: var(--slate) !important;
                 }
 
                 .attendance-table td {
                     padding: 12px 8px;
                     text-align: center;
-                    border: 1px solid #dee2e6;
+                    border: 1px solid var(--edge);
                     font-weight: 600;
                     font-size: 1.1rem;
                 }
@@ -283,18 +283,18 @@ const AttendanceSummary = ({ zoneId, startDate, endDate }) => {
                 }
 
                 .percentage-badge.good {
-                    background: #d4edda;
-                    color: #155724;
+                    background: var(--paddy-wash);
+                    color: var(--paddy-deep);
                 }
 
                 .percentage-badge.medium {
-                    background: #fff3cd;
-                    color: #856404;
+                    background: var(--clay-wash);
+                    color: var(--clay);
                 }
 
                 .percentage-badge.poor {
-                    background: #f8d7da;
-                    color: #721c24;
+                    background: var(--rust-wash);
+                    color: var(--rust);
                 }
 
                 @media (max-width: 768px) {

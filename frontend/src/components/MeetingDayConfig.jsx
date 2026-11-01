@@ -103,8 +103,8 @@ const MeetingDayConfig = () => {
                         marginTop: '20px', 
                         padding: '12px', 
                         borderRadius: '8px', 
-                        background: message.includes('✅') ? '#e6fffa' : '#fff5f5',
-                        color: message.includes('✅') ? '#2c7a7b' : '#c53030',
+                        background: message.includes('✅') ? 'var(--paddy-wash)' : 'var(--rust-wash)',
+                        color: message.includes('✅') ? 'var(--paddy)' : 'var(--rust)',
                         fontWeight: '600',
                         textAlign: 'center'
                     }}>
@@ -120,7 +120,7 @@ const MeetingDayConfig = () => {
                         marginTop: '32px', 
                         width: '100%', 
                         padding: '16px',
-                        fontSize: '1rem'
+                        fontSize: '0.95rem'
                     }}
                 >
                     {saving ? 'Saving...' : 'Save Settings'}

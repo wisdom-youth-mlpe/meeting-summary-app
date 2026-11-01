@@ -29,7 +29,7 @@ export default defineConfig({
         name: 'Wisdom MLP E Meetings',
         short_name: 'Wisdom Meetings',
         description: 'Professional Meeting Summary and Reporting Application',
-        theme_color: '#3498db',
+        theme_color: '#34424A',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -58,6 +58,11 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.js',
+    restoreMocks: true,
   },
 })
 
