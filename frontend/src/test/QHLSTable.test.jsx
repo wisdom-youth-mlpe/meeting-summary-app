@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import QHLSTable from '../components/QHLSTable';
 
@@ -9,24 +9,40 @@ const rows = [
   { unit: 'Unit C', status: 'illa', carried: true },
 ];
 
+// Each unit is a group of three toggle buttons named after the unit
+const statusOf = (unit) => {
+  const pressed = within(screen.getByRole('group', { name: unit }))
+    .getAllByRole('button')
+    .find(b => b.getAttribute('aria-pressed') === 'true');
+  return pressed ? pressed.textContent : '';
+};
+
+const pick = (unit, label) =>
+  userEvent.click(within(screen.getByRole('group', { name: unit })).getByRole('button', { name: label }));
+
 describe('QHLSTable', () => {
   test('lists each unit with its status; carried QHLS ഇല്ല units are hidden', () => {
     render(<QHLSTable qhlsData={rows} onQHLSChange={() => {}} />);
-    expect(screen.getByLabelText('Unit A')).toHaveValue('');
-    expect(screen.getByLabelText('Unit B')).toHaveValue('nadannu');
-    expect(screen.queryByLabelText('Unit C')).not.toBeInTheDocument();
+    expect(statusOf('Unit A')).toBe('');
+    expect(statusOf('Unit B')).toBe('നടന്നു');
+    expect(screen.queryByRole('group', { name: 'Unit C' })).not.toBeInTheDocument();
   });
 
   test('offers all three statuses', () => {
     render(<QHLSTable qhlsData={rows} onQHLSChange={() => {}} />);
-    const options = [...screen.getByLabelText('Unit A').options].map(o => o.textContent);
-    expect(options).toEqual(expect.arrayContaining(['നടന്നു', 'നടന്നിട്ടില്ല', 'QHLS ഇല്ല']));
+    const labels = within(screen.getByRole('group', { name: 'Unit A' })).getAllByRole('button').map(b => b.textContent);
+    expect(labels).toEqual(['നടന്നു', 'നടന്നിട്ടില്ല', 'QHLS ഇല്ല']);
+  });
+
+  test('shows how many visible units have an answer', () => {
+    render(<QHLSTable qhlsData={rows} onQHLSChange={() => {}} />);
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
   });
 
   test('picking a status reports the updated rows', async () => {
     const onChange = vi.fn();
     render(<QHLSTable qhlsData={rows} onQHLSChange={onChange} />);
-    await userEvent.selectOptions(screen.getByLabelText('Unit A'), 'nadannittilla');
+    await pick('Unit A', 'നടന്നിട്ടില്ല');
     expect(onChange).toHaveBeenCalledWith([
       { unit: 'Unit A', status: 'nadannittilla' }, rows[1], rows[2],
     ]);
@@ -35,9 +51,9 @@ describe('QHLSTable', () => {
   test('selecting QHLS ഇല്ല keeps the unit in the list until save', async () => {
     const onChange = vi.fn();
     const { rerender } = render(<QHLSTable qhlsData={rows} onQHLSChange={onChange} />);
-    await userEvent.selectOptions(screen.getByLabelText('Unit A'), 'illa');
+    await pick('Unit A', 'QHLS ഇല്ല');
     rerender(<QHLSTable qhlsData={onChange.mock.calls[0][0]} onQHLSChange={onChange} />);
-    expect(screen.getByLabelText('Unit A')).toHaveValue('illa');
+    expect(statusOf('Unit A')).toBe('QHLS ഇല്ല');
   });
 
   test('restore link brings a hidden unit back with no status', async () => {

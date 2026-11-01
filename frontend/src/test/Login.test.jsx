@@ -54,3 +54,15 @@ describe('Login', () => {
     expect(await screen.findByText('Home page')).toBeInTheDocument();
   });
 });
+
+describe('Login password visibility', () => {
+  test('eye button shows and hides the password', async () => {
+    renderLogin();
+    const password = screen.getByLabelText('Password');
+    expect(password).toHaveAttribute('type', 'password');
+    await userEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(password).toHaveAttribute('type', 'text');
+    await userEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(password).toHaveAttribute('type', 'password');
+  });
+});
