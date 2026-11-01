@@ -47,7 +47,7 @@ jobs:
 
             PROD_ENV=/srv/apps/meeting-summary/.env
             DEV_ENV=/srv/apps/meeting-summary-dev/.env.dev
-            BACKUP_DIR=/srv/backups/meeting-summary-dev
+            BACKUP_DIR=/srv/apps/meeting-summary-dev/backups
             TOOLS_IMAGE=mongo:7
 
             read_uri() {
