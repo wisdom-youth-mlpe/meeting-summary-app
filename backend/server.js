@@ -139,4 +139,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Tests import the app without connecting or listening
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = app;
