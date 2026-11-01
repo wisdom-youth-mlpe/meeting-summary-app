@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDashboardStats, getZones, getMeetingReport, getSetting } from '../services/api';
+import { getDashboardStats, getZones, getMeetingReport } from '../services/api';
+import { loadMeetingDay, getReportingWeek, toDateKey } from '../services/week';
 import { getUser, hasRole } from '../services/auth';
 import AttendanceSummary from './AttendanceSummary';
 
@@ -21,7 +22,8 @@ const Dashboard = () => {
     const [selectedReport, setSelectedReport] = useState(null);
     const [selectedMeetingData, setSelectedMeetingData] = useState(null);
     const [reportLoading, setReportLoading] = useState(false);
-    const [meetingDay, setMeetingDay] = useState(3); // Default to Wednesday
+    const [meetingDay, setMeetingDay] = useState(null);
+    const latestRequestRef = useRef(0);
 
     useEffect(() => {
         loadZones();
@@ -29,18 +31,9 @@ const Dashboard = () => {
     }, []);
 
     const fetchMeetingDay = async () => {
-        try {
-            const response = await getSetting('district_meeting_day');
-            if (response.success && response.value !== null) {
-                setMeetingDay(parseInt(response.value));
-                initializeDates('week', parseInt(response.value));
-            } else {
-                initializeDates('week', 3); // Fallback to Wednesday
-            }
-        } catch (e) {
-            console.error("Failed to fetch meeting day setting", e);
-            initializeDates('week', 3);
-        }
+        const day = await loadMeetingDay();
+        setMeetingDay(day);
+        initializeDates('week', day);
     };
 
     useEffect(() => {
@@ -74,42 +67,25 @@ const Dashboard = () => {
 
     const initializeDates = (filterType, targetDay = null) => {
         const today = new Date();
-        let start = new Date();
-        let end = new Date();
-        
-        const currentTargetDay = targetDay !== null ? targetDay : meetingDay;
+        let start = new Date(today);
+        let end = new Date(today);
 
         if (filterType === '7days') {
             start.setDate(today.getDate() - 7);
         } else if (filterType === 'week') {
-            // day: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-            const day = today.getDay();
-            
-            if (day === currentTargetDay) {
-                // If today is the meeting day, we are showing the week that just finished
-                start.setDate(today.getDate() - 7);
-                end.setDate(today.getDate() - 1);
-            } else {
-                // days since last target day
-                const diff = (day - currentTargetDay + 7) % 7;
-                start.setDate(today.getDate() - diff);
-                // end remains today
-            }
+            const day = targetDay !== null ? targetDay : meetingDay;
+            if (day === null) return; // meeting day still loading; fetchMeetingDay sets the week
+            // Same reporting week as the Reports tab
+            ({ start, end } = getReportingWeek(day, today));
         } else if (filterType === 'month') {
             start.setDate(1); // 1st of month
         } else if (filterType === 'custom') {
-            // Keep existing or default to month
+            // Keep existing dates
             return;
         }
 
-        const formatDateLocal = (d) => {
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-        setStartDate(formatDateLocal(start));
-        setEndDate(formatDateLocal(end));
+        setStartDate(toDateKey(start));
+        setEndDate(toDateKey(end));
     };
 
     const handleDateFilterChange = (filter) => {
@@ -120,9 +96,12 @@ const Dashboard = () => {
     };
 
     const fetchStats = async () => {
+        // Only the newest request may update the screen; quick filter taps would otherwise race
+        const requestId = ++latestRequestRef.current;
         setLoading(true);
         try {
             const response = await getDashboardStats(startDate, endDate, selectedZone);
+            if (requestId !== latestRequestRef.current) return;
             if (response.success) {
                 setStats(response.data);
                 setError(null);
@@ -130,9 +109,10 @@ const Dashboard = () => {
                 setError('Failed to fetch data');
             }
         } catch (err) {
+            if (requestId !== latestRequestRef.current) return;
             setError(err.message || 'Error fetching dashboard data');
         } finally {
-            setLoading(false);
+            if (requestId === latestRequestRef.current) setLoading(false);
         }
     };
 
@@ -176,74 +156,33 @@ const Dashboard = () => {
 
     // --- Renderers ---
 
-    const CollapsibleCard = ({ title, children, defaultExpanded = true, className = "" }) => {
-        const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-        return (
-            <div className={`card ${className}`} style={{ 
-                marginBottom: '10px', 
-                padding: 0, 
-                overflow: 'hidden',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                border: isExpanded ? '1px solid var(--primary-light)' : '1px solid rgba(0,0,0,0.05)',
-                boxShadow: isExpanded ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
-            }}>
-                <div 
-                    onClick={() => setIsExpanded(!isExpanded)} 
-                    style={{ 
-                        padding: '12px 20px', 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center', 
-                        cursor: 'pointer',
-                        background: isExpanded ? 'var(--gray-50)' : 'white',
-                        transition: 'background 0.3s ease'
-                    }}
-                >
-                    <h3 style={{ 
-                        margin: 0, 
-                        fontSize: '0.95rem', 
-                        color: '#2c3e50',
-                        fontWeight: isExpanded ? '700' : '600'
-                    }}>{title}</h3>
-                    <div style={{ 
-                        width: '24px',
-                        height: '24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '50%',
-                        background: isExpanded ? 'var(--primary-light)' : 'transparent',
-                        transition: 'all 0.3s ease'
-                    }}>
-                        <span style={{ 
-                            fontSize: '0.8rem', 
-                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            color: isExpanded ? 'var(--primary)' : '#999',
-                            display: 'inline-block'
-                        }}>
-                            ▼
-                        </span>
-                    </div>
-                </div>
-                <div style={{ 
-                    display: 'grid',
-                    gridTemplateRows: isExpanded ? '1fr' : '0fr',
-                    transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    background: 'white'
-                }}>
-                    <div style={{ overflow: 'hidden' }}>
-                        <div style={{ padding: '16px 20px' }}>
-                            {children}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    const CollapsibleCard = ({ id, title, children, defaultExpanded = true, className = "" }) => (
+        <details id={id} className={`card dash-collapsible collapsible ${className}`} open={defaultExpanded}>
+            <summary>
+                <h3>{title}</h3>
+                <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </summary>
+            <div className="dash-collapsible-body">{children}</div>
+        </details>
+    );
+
+    const filterActive = dateFilter !== 'week' || selectedZone !== 'All';
 
     const renderControls = () => (
-        <div className="dashboard-controls card">
+        <details className="filter-panel">
+            <summary>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+                Filter
+                {filterActive && <span className="filter-dot" aria-label="Filter on" />}
+                <svg className="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </summary>
+        <div className="dashboard-controls">
             <div className="control-group">
                 <label>Date Range:</label>
                 <div className="btn-group">
@@ -298,6 +237,7 @@ const Dashboard = () => {
                 <button className="refresh-btn" onClick={fetchStats}>Refresh</button>
             </div>
         </div>
+        </details>
     );
 
     const renderOverview = () => {
@@ -319,23 +259,54 @@ const Dashboard = () => {
 
         // All Zones View - Show simplified dashboard
         if (selectedZone === 'All') {
+            const zonesMet = zonesWithMeetings?.length || 0;
+            const zoneTotal = zonesMet + noMeetingZones.length;
+            const showQhls = dateFilter === 'week' || dateFilter === '7days';
+            // Tapping a number opens its card below and brings it into view
+            const openCard = (cardId) => {
+                const card = document.getElementById(cardId);
+                if (!card) return;
+                card.open = true;
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+
             return (
                 <div className="dashboard-grid">
+                    <div className="dash-summary full-width">
+                        <button type="button" className="dash-stat" onClick={() => openCard('card-no-meeting')}>
+                            <span className="dash-stat-value nums">
+                                {zonesMet}<span className="dash-stat-of"> / {zoneTotal}</span>
+                            </span>
+                            <span className="dash-stat-label">മീറ്റിംഗ് നടന്ന മണ്ഡലങ്ങൾ</span>
+                        </button>
+                        {showQhls && (
+                            <button type="button" className={`dash-stat${qhlsMissingBranches?.length ? ' warn' : ''}`} onClick={() => openCard('card-qhls')}>
+                                <span className="dash-stat-value nums">{qhlsMissingBranches?.length || 0}</span>
+                                <span className="dash-stat-label">QHLS നടക്കാത്ത ശാഖകൾ</span>
+                            </button>
+                        )}
+                        <button type="button" className={`dash-stat${consecutiveAbsence.length ? ' warn' : ''}`} onClick={() => openCard('card-leaves')}>
+                            <span className="dash-stat-value nums">{consecutiveAbsence.length}</span>
+                            <span className="dash-stat-label">തുടർച്ചയായി 3 ലീവ്</span>
+                        </button>
+                    </div>
+
                     {/* Zones WITHOUT meetings */}
                     <CollapsibleCard 
+                        id="card-no-meeting"
                         className="full-width"
                         title={`${periodLabel} മീറ്റിംഗ് നടക്കാത്ത മണ്ഡലങ്ങൾ (${noMeetingZones.length})`}
                     >
                         {noMeetingZones.length === 0 ? (
                             <p className="empty-state success-text">എല്ലാ മണ്ഡലങ്ങളിലും മീറ്റിംഗ് നടന്നു!</p>
                         ) : (
-                            <ol className="zone-list warn-list">
+                            <div className="tags-container">
                                 {noMeetingZones.map(z => (
-                                    <li key={z.zoneName}>
+                                    <span key={z.zoneName} className="tag warn">
                                         {z.zoneName}{z.reason ? ` (${z.reason})` : ''}
-                                    </li>
+                                    </span>
                                 ))}
-                            </ol>
+                            </div>
                         )}
                     </CollapsibleCard>
 
@@ -389,21 +360,21 @@ const Dashboard = () => {
                             navigator.clipboard.writeText(whatsappMsg).then(() => {
                                 const btn = document.getElementById('wa-copy-btn');
                                 if (btn) {
-                                    btn.textContent = '✅ Copied!';
-                                    setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+                                    btn.textContent = 'Copied!';
+                                    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
                                 }
                             });
                         };
                         return (
                             <CollapsibleCard 
                                 className="full-width whatsapp-card"
-                                title="📲 WhatsApp Message"
+                                title="WhatsApp Message"
                                 defaultExpanded={false}
                             >
                                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                    <h3 style={{ margin: 0, display: 'none' }}>📲 WhatsApp Message</h3>
+                                    <h3 style={{ margin: 0, display: 'none' }}>WhatsApp Message</h3>
                                     <button id="wa-copy-btn" className="wa-copy-btn" onClick={handleCopyWhatsApp}>
-                                        📋 Copy
+                                        Copy
                                     </button>
                                 </div>
                                 <pre className="whatsapp-preview">{whatsappMsg}</pre>
@@ -413,8 +384,9 @@ const Dashboard = () => {
 
                     {/* Members with 3+ Consecutive Leaves */}
                     <CollapsibleCard 
+                        id="card-leaves"
                         className="full-width"
-                        title="⚠️ തുടർച്ചയായി 3 മീറ്റിംഗിൽ ലീവ് ആയ മെമ്പർമാർ"
+                        title="തുടർച്ചയായി 3 മീറ്റിംഗിൽ ലീവ് ആയ മെമ്പർമാർ"
                         defaultExpanded={false}
                     >
                         {consecutiveAbsence.length === 0 ? (
@@ -433,6 +405,7 @@ const Dashboard = () => {
                     {/* QHLS Missing Branches - Only show for week/7days filter */}
                     {(dateFilter === 'week' || dateFilter === '7days') && (
                         <CollapsibleCard 
+                            id="card-qhls"
                             className="full-width"
                             title="QHLS നടക്കാത്ത ശാഖകൾ"
                             defaultExpanded={false}
@@ -442,7 +415,7 @@ const Dashboard = () => {
                             ) : (
                                 <div className="tags-container">
                                     {qhlsMissingBranches.map((b, i) => (
-                                        <span key={i} className="tag warn">{b.branch}</span>
+                                        <span key={i} className="tag warn">{b.branch}{b.zone ? <span className="tag-sub"> · {b.zone}</span> : null}</span>
                                     ))}
                                 </div>
                             )}
@@ -523,7 +496,7 @@ const Dashboard = () => {
                     <div className="sub-text">in selected range</div>
                 </div>
                 <div className="card kpi-card">
-                    <h3>Active Members</h3>
+                    <h3>Attendees in range</h3>
                     <div className="number">{totalMembers}</div>
                 </div>
                 <div className="card kpi-card">
@@ -534,7 +507,7 @@ const Dashboard = () => {
 
                 {/* Consecutive Leave */}
                 <div className="card full-width">
-                    <h3>⚠️ തുടർച്ചയായി 3+ മീറ്റിംഗിൽ ലീവ്</h3>
+                    <h3>തുടർച്ചയായി 3+ മീറ്റിംഗിൽ ലീവ്</h3>
                     {consecutiveAbsence.length === 0 ? (
                         <p className="empty-state">ആരും ഇല്ല</p>
                     ) : (
@@ -708,7 +681,7 @@ const Dashboard = () => {
                         <span className="icon">←</span> Back
                     </button>
                     <h3>മീറ്റിംഗ് റിപ്പോർട്ട്</h3>
-                    <button className="print-btn" onClick={handlePrintReport}>🖨️ Print</button>
+                    <button className="print-btn" onClick={handlePrintReport}>Print</button>
                 </div>
 
                 <div className="report-content-wrapper">
@@ -755,42 +728,20 @@ const Dashboard = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                 <h2 className="page-title" style={{ margin: 0 }}>Dashboard</h2>
                 {isDistrictAdmin && (
-                    <span style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        padding: '6px 14px',
-                        borderRadius: '20px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
-                    }}>
-                        📊 District View
+                    <span className="app-user-badge" style={{ background: 'var(--slate)', color: 'var(--surface)' }}>
+                        District View
                     </span>
                 )}
             </div>
             {(dateFilter === 'week' || dateFilter === '7days') && (
-                <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-                    <div style={{ 
-                        fontSize: '0.9rem', 
-                        color: 'var(--primary)', 
-                        fontWeight: '700',
-                        background: 'var(--primary-light)',
-                        display: 'inline-block',
-                        padding: '6px 16px',
-                        borderRadius: '20px',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                    }}>
-                        📅 Reporting Week: {formatDateShort(startDate)} - {formatDateShort(endDate)}
+                <div style={{ marginBottom: 'var(--space-lg)' }}>
+                    <div className="week-tag nums">
+                        Reporting Week: {formatDateShort(startDate)} - {formatDateShort(endDate)}
                     </div>
-                    {stats?.currentWeek && (
-                        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
-                            Week {stats.currentWeek}
-                        </div>
-                    )}
                 </div>
             )}
             {dateFilter === 'month' && (
-                <h4 className="week-subtitle" style={{ textAlign: 'center' }}>
+                <h4 className="week-subtitle">
                     {new Date().toLocaleString('ml-IN', { month: 'long' })}
                 </h4>
             )}
@@ -817,22 +768,22 @@ const Dashboard = () => {
                 }
                 .page-title {
                     margin-bottom: 20px;
-                    color: #2c3e50;
+                    color: var(--slate);
                 }
                 .week-subtitle {
                     margin: -10px 0 15px 0;
-                    color: #333;
+                    color: var(--slate);
                     font-size: 1rem;
                     font-weight: 600;
                 }
                 .no-meeting-card {
                     text-align: center;
                     padding: 40px 20px;
-                    background: #fff3cd;
-                    border: 1px solid #ffeeba;
+                    background: var(--clay-wash);
+                    border: 1px solid var(--clay-wash);
                 }
                 .no-meeting-card h3 {
-                    color: #856404;
+                    color: var(--clay);
                     margin-bottom: 10px;
                 }
                 .meetings-table {
@@ -843,16 +794,16 @@ const Dashboard = () => {
                 .meetings-table td {
                     padding: 12px 15px;
                     text-align: left;
-                    border-bottom: 1px solid #eee;
+                    border-bottom: 1px solid var(--edge);
                 }
                 .meetings-table th {
-                    background: #f8f9fa;
+                    background: var(--gray-50);
                     font-weight: 600;
-                    color: #555;
+                    color: var(--stone);
                 }
                 .view-btn {
                     padding: 6px 16px;
-                    background: #3498db;
+                    background: var(--slate);
                     color: white;
                     border: none;
                     border-radius: 4px;
@@ -860,15 +811,15 @@ const Dashboard = () => {
                     font-size: 0.9rem;
                 }
                 .view-btn:hover {
-                    background: #2980b9;
+                    background: var(--slate);
                 }
                 .view-btn:disabled {
-                    background: #bdc3c7;
+                    background: var(--edge);
                     cursor: not-allowed;
                 }
                 .print-btn {
                     padding: 8px 16px;
-                    background: #27ae60;
+                    background: var(--paddy);
                     color: white;
                     border: none;
                     border-radius: 6px;
@@ -876,43 +827,27 @@ const Dashboard = () => {
                     font-size: 0.9rem;
                 }
                 .print-btn:hover {
-                    background: #219a52;
+                    background: var(--paddy-deep);
                 }
                 .whatsapp-card {
-                    border: 2px solid #25D366;
-                    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                    background: var(--paddy-wash);
                 }
                 .whatsapp-card h3 {
-                    color: #128C7E;
+                    color: var(--paddy-deep);
                 }
                 .wa-copy-btn {
-                    padding: 8px 20px;
-                    background: #25D366;
-                    color: white;
-                    border: none;
-                    border-radius: 20px;
-                    cursor: pointer;
-                    font-size: 0.9rem;
-                    font-weight: 600;
-                    transition: background 0.2s, transform 0.1s;
-                    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
-                }
-                .wa-copy-btn:hover {
-                    background: #128C7E;
-                    transform: scale(1.04);
+                    padding: 0 20px;
                 }
                 .whatsapp-preview {
                     background: #ffffff;
-                    border: 1px solid #b7ebc8;
-                    border-radius: 10px;
+                    border-radius: var(--radius-md);
                     padding: 16px 20px;
                     font-family: inherit;
                     font-size: 0.97rem;
-                    color: #1a3a2a;
+                    color: var(--slate);
                     white-space: pre-wrap;
                     line-height: 1.7;
                     margin: 0;
-                    box-shadow: inset 0 1px 4px rgba(0,0,0,0.04);
                 }
                 .report-view .card-header {
                     display: flex;
@@ -923,14 +858,14 @@ const Dashboard = () => {
                     flex-wrap: wrap;
                 }
                 .report-content-wrapper {
-                    background: #f8f9fa;
+                    background: var(--gray-50);
                     padding: 20px;
                     border-radius: 8px;
                 }
                 .report-section {
                     margin-bottom: 20px;
                     padding-bottom: 15px;
-                    border-bottom: 1px solid #e0e0e0;
+                    border-bottom: 1px solid var(--edge);
                 }
                 .report-section:last-child {
                     border-bottom: none;
@@ -938,14 +873,14 @@ const Dashboard = () => {
                 }
                 .report-section h4 {
                     margin: 0 0 10px 0;
-                    color: #2c3e50;
+                    color: var(--slate);
                 }
                 .report-section pre {
                     margin: 0;
                     white-space: pre-wrap;
                     font-family: inherit;
                     font-size: 0.95rem;
-                    color: #333;
+                    color: var(--slate);
                 }
                 @media print {
                     .dashboard-controls,
@@ -959,20 +894,74 @@ const Dashboard = () => {
                         border: none;
                     }
                 }
+                .dash-summary {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                    gap: 6px;
+                }
+                .dash-stat {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    justify-content: flex-start;
+                    gap: 2px;
+                    padding: var(--space-md);
+                    background: var(--surface);
+                    color: var(--slate);
+                    text-align: left;
+                    font-weight: 400;
+                }
+                .dash-stat:hover {
+                    background: var(--gray-50);
+                }
+                .dash-stat-value {
+                    font-size: 1.9rem;
+                    font-weight: 700;
+                    font-variation-settings: 'wdth' 80;
+                    line-height: 1.1;
+                    color: var(--paddy-deep);
+                }
+                .dash-stat.warn .dash-stat-value {
+                    color: var(--clay);
+                }
+                .dash-stat-of {
+                    font-size: 1.1rem;
+                    color: var(--stone);
+                }
+                .dash-stat-label {
+                    font-size: 0.85rem;
+                    color: var(--stone);
+                }
+                .tag-sub {
+                    color: var(--stone);
+                    font-size: 0.85em;
+                }
+                .card.dash-collapsible {
+                    padding: 0;
+                    margin-bottom: 6px;
+                }
+                .dash-collapsible summary {
+                    padding: 4px var(--space-lg);
+                }
+                .dash-collapsible summary h3 {
+                    margin: 0;
+                    font-size: 1.05rem;
+                }
+                .dash-collapsible-body {
+                    padding: 0 var(--space-lg) var(--space-lg);
+                }
                 .card {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-                    border: 1px solid #eee;
+                    background: var(--surface);
+                    padding: var(--space-lg);
+                    border-radius: var(--radius-md);
                 }
                 .dashboard-controls {
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 20px;
+                    gap: var(--space-md) var(--space-lg);
                     align-items: flex-end;
-                    margin-bottom: 25px;
-                    background: #f8f9fa;
+                    margin-bottom: var(--space-xl);
+                    background: transparent;
+                    padding: 0;
                 }
                 .control-group {
                     display: flex;
@@ -984,29 +973,27 @@ const Dashboard = () => {
                 }
                 .control-group label {
                     font-size: 0.9rem;
-                    color: #666;
+                    color: var(--stone);
                     font-weight: 500;
                 }
                 .btn-group {
                     display: flex;
-                    border: 1px solid #ddd;
-                    border-radius: 6px;
-                    overflow: hidden;
+                    gap: 6px;
                 }
                 .btn-group button {
-                    background: white;
-                    border: none;
-                    padding: 8px 16px;
-                    cursor: pointer;
-                    border-right: 1px solid #ddd;
-                    font-size: 0.9rem;
-                    color: black;
+                    flex: 1;
+                    background: var(--surface);
+                    color: var(--slate);
+                    padding: 0 14px;
+                    font-size: 0.95rem;
+                    font-weight: 500;
+                    white-space: nowrap;
                 }
-                .btn-group button:last-child {
-                    border-right: none;
+                .btn-group button:hover {
+                    background: var(--gray-50);
                 }
                 .btn-group button.active {
-                    background: #3498db;
+                    background: var(--slate);
                     color: white;
                 }
                 .dates {
@@ -1016,20 +1003,20 @@ const Dashboard = () => {
                 }
                 .dates input {
                     padding: 8px;
-                    border: 1px solid #ddd;
+                    border: 1px solid var(--edge);
                     border-radius: 4px;
                 }
                 .zone-select {
                     padding: 8px 12px;
                     border-radius: 4px;
-                    border: 1px solid #ddd;
+                    border: 1px solid var(--edge);
                     min-width: 150px;
-                    font-size: 1rem;
+                    font-size: 0.95rem;
                 }
                 .dashboard-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 20px;
+                    gap: 6px;
                 }
                 .full-width {
                     grid-column: 1 / -1;
@@ -1040,15 +1027,17 @@ const Dashboard = () => {
                 }
                 .kpi-card .number {
                     font-size: 2.5rem;
-                    font-weight: 800;
-                    color: #2c3e50;
+                    font-weight: 700;
+                    font-variation-settings: 'wdth' 80;
+                    font-variant-numeric: tabular-nums;
+                    color: var(--slate);
                     margin: 10px 0;
                 }
                 .kpi-card.warn .number {
-                    color: #e67e22;
+                    color: var(--clay);
                 }
                 .sub-text {
-                    color: #7f8c8d;
+                    color: var(--stone);
                     font-size: 0.9rem;
                 }
                 .tags-container {
@@ -1058,20 +1047,20 @@ const Dashboard = () => {
                     margin-top: 15px;
                 }
                 .tag {
-                    padding: 6px 12px;
-                    background: #eee;
-                    border-radius: 20px;
+                    padding: 4px 10px;
+                    background: var(--mist);
+                    border-radius: var(--radius-sm);
                     font-size: 0.9rem;
                 }
                 .tag.warn {
-                    background: #fff3cd;
-                    color: #856404;
-                    border: 1px solid #ffeeba;
+                    background: var(--clay-wash);
+                    color: var(--clay);
+                    border: 1px solid var(--clay-wash);
                 }
                 .tag.success {
-                    background: #d4edda;
-                    color: #155724;
-                    border: 1px solid #c3e6cb;
+                    background: var(--paddy-wash);
+                    color: var(--paddy-deep);
+                    border: 1px solid var(--paddy-wash);
                 }
                 .zone-list {
                     margin: 15px 0 0 0;
@@ -1080,28 +1069,27 @@ const Dashboard = () => {
                 .zone-list li {
                     padding: 4px 0;
                     font-size: 0.95rem;
-                    color: #333;
+                    color: var(--slate);
                 }
                 .leave-tag {
                     display: flex;
                     align-items: center;
                     gap: 8px;
-                    background: #f8f9fa;
+                    background: var(--gray-50);
                     padding: 8px 12px;
-                    border-radius: 8px;
-                    border: 1px solid #eee;
+                    border-radius: var(--radius-md);
                 }
                 .leave-tag .name {
                     font-weight: 600;
                 }
                 .leave-tag .reason {
-                    color: #e74c3c;
+                    color: var(--rust);
                     font-style: italic;
                 }
                 .zone-badge {
                     font-size: 0.75rem;
-                    background: #e1ecf4;
-                    color: #39739d;
+                    background: var(--edge);
+                    color: var(--slate);
                     padding: 2px 6px;
                     border-radius: 4px;
                 }
@@ -1116,18 +1104,17 @@ const Dashboard = () => {
                 th, td {
                     padding: 12px 15px;
                     text-align: left;
-                    border-bottom: 1px solid #eee;
+                    border-bottom: 1px solid var(--edge);
                 }
                 th {
                     font-weight: 600;
-                    color: #7f8c8d;
+                    color: var(--stone);
                     font-size: 0.9rem;
-                    text-transform: uppercase;
-                    background: #fcfcfc;
+                    background: var(--gray-50);
                 }
                 .warn-table th {
-                    color: #856404;
-                    background: #fff3cd;
+                    color: var(--clay);
+                    background: var(--clay-wash);
                 }
                 .badge {
                     padding: 4px 8px;
@@ -1136,12 +1123,12 @@ const Dashboard = () => {
                     font-size: 0.85rem;
                 }
                 .badge.good {
-                    background: #d4edda;
-                    color: #155724;
+                    background: var(--paddy-wash);
+                    color: var(--paddy-deep);
                 }
                 .badge.bad {
-                    background: #f8d7da;
-                    color: #721c24;
+                    background: var(--rust-wash);
+                    color: var(--rust);
                 }
                 .card-header {
                     display: flex;
@@ -1155,17 +1142,17 @@ const Dashboard = () => {
                 .btn-link {
                     background: none;
                     border: none;
-                    color: #3498db;
+                    color: var(--slate);
                     cursor: pointer;
                     font-weight: 600;
                 }
                 .back-button {
-                  color: #667eea;
-                  font-size: 16px;
+                  color: var(--slate);
+                  font-size: 0.95rem;
                   font-weight: 600;
                   background: transparent;
-                  border: 2px solid #667eea;
-                  padding: 8px 16px;
+                  border: none;
+                  padding: 0 12px;
                   border-radius: 6px;
                   cursor: pointer;
                   display: flex;
@@ -1174,15 +1161,15 @@ const Dashboard = () => {
                   transition: all 0.2s ease;
                 }
                 .back-button:hover {
-                  background: #667eea;
+                  background: var(--slate);
                   color: white;
                 }
                 .back-button .icon {
                     font-size: 20px;
                 }
                 .error-msg {
-                    background: #f8d7da;
-                    color: #721c24;
+                    background: var(--rust-wash);
+                    color: var(--rust);
                     padding: 15px;
                     border-radius: 8px;
                     margin-bottom: 20px;
@@ -1190,21 +1177,21 @@ const Dashboard = () => {
                 .loading-spinner {
                     text-align: center;
                     padding: 40px;
-                    color: #666;
+                    color: var(--stone);
                     font-size: 1.1rem;
                 }
-                .success-text { color: #27ae60; font-weight: bold; }
-                .warn-text { color: #f39c12; font-weight: bold; }
-                .error-text { color: #c0392b; font-weight: bold; }
+                .success-text { color: var(--paddy); font-weight: bold; }
+                .warn-text { color: var(--clay); font-weight: bold; }
+                .error-text { color: var(--rust); font-weight: bold; }
                 .more-row {
                     text-align: center;
                     padding: 10px;
-                    color: #888;
+                    color: var(--stone);
                     font-style: italic;
                 }
                 .refresh-btn {
                     padding: 10px 20px;
-                    background: #27ae60;
+                    background: var(--paddy);
                     color: white;
                     border: none;
                     border-radius: 6px;

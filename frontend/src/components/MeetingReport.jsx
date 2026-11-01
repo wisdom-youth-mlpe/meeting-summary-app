@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getAllMeetings, getMeetingReport, deleteMeeting, getSetting } from '../services/api';
+import { getAllMeetings, getMeetingReport, deleteMeeting } from '../services/api';
+import { loadMeetingDay, getReportingWeek } from '../services/week';
 import { getAccessibleZones, canEditMeetings, hasAnyRole, getUser, hasRole } from '../services/auth';
 import { filterMeetingsByZoneAccess } from '../services/zoneHelper';
 
@@ -11,7 +12,6 @@ const MeetingReport = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [selectedMeetingData, setSelectedMeetingData] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [meetingDay, setMeetingDay] = useState(3); // Default to Wednesday
   const [weekRange, setWeekRange] = useState({ start: null, end: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
@@ -39,39 +39,7 @@ const MeetingReport = () => {
   }, []);
 
   const fetchMeetingDay = async () => {
-    try {
-      const response = await getSetting('district_meeting_day');
-      if (response.success && response.value !== null) {
-        const mDay = parseInt(response.value);
-        setMeetingDay(mDay);
-        calculateWeekRange(mDay);
-      } else {
-        calculateWeekRange(3);
-      }
-    } catch (e) {
-      calculateWeekRange(3);
-    }
-  };
-
-  const calculateWeekRange = (mDay) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const day = today.getDay();
-    let start = new Date(today);
-    let end = new Date(today);
-
-    if (day === mDay) {
-      // If today is the meeting day, we are analyzing the week that just finished
-      start.setDate(today.getDate() - 7);
-      end.setDate(today.getDate() - 1);
-    } else {
-      // Otherwise, we are in the current cycle starting from the most recent meeting day
-      const diff = (day - mDay + 7) % 7;
-      start.setDate(today.getDate() - diff);
-      end.setDate(start.getDate() + 6);
-    }
-    
-    setWeekRange({ start, end });
+    setWeekRange(getReportingWeek(await loadMeetingDay()));
   };
 
   useEffect(() => {
@@ -154,10 +122,10 @@ const MeetingReport = () => {
         setSelectedMeetingData(response.meetingData);
         setSelectedReport(response.report);
       } else {
-        alert('റിപ്പോർട്ട് ലഭിക്കുന്നതിൽ പിശക് (Error fetching report)');
+        alert('റിപ്പോർട്ട് ലഭിക്കുന്നതിൽ പിശക്');
       }
     } catch (err) {
-      alert('റിപ്പോർട്ട് ലഭിക്കുന്നതിൽ പിശക് (Error fetching report): ' + err.message);
+      alert('റിപ്പോർട്ട് ലഭിക്കുന്നതിൽ പിശക്: ' + err.message);
     }
   };
 
@@ -181,10 +149,10 @@ const MeetingReport = () => {
         });
         // The form component will need to check for editMeetingData on mount
       } else {
-        alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക് (Error fetching meeting data)');
+        alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക്');
       }
     } catch (err) {
-      alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക് (Error fetching meeting data): ' + err.message);
+      alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക്: ' + err.message);
     }
   };
 
@@ -361,7 +329,7 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     navigator.clipboard.writeText(reportText).then(() => {
       alert('റിപ്പോർട്ട് കോപ്പി ചെയ്തു! (Report copied!)');
     }).catch(() => {
-      alert('കോപ്പി ചെയ്യുന്നതിൽ പിശക് (Error copying)');
+      alert('കോപ്പി ചെയ്യുന്നതിൽ പിശക്');
     });
   };
 
@@ -378,8 +346,8 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
   if (loading) {
     return (
       <div className="container">
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          ലോഡ് ചെയ്യുന്നു... (Loading...)
+        <div className="loading">
+          ലോഡ് ചെയ്യുന്നു...
         </div>
       </div>
     );
@@ -401,10 +369,26 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     return mDate >= weekRange.start && mDate <= weekRange.end;
   });
 
-  const olderMeetings = filteredMeetings.filter(m => {
-    if (!weekRange.start || !weekRange.end) return false;
+  // The reporting week before this one
+  const lastWeekRange = (() => {
+    if (!weekRange.start) return null;
+    const start = new Date(weekRange.start);
+    start.setDate(start.getDate() - 7);
+    const end = new Date(weekRange.start);
+    end.setDate(end.getDate() - 1);
+    return { start, end };
+  })();
+
+  const lastWeekMeetings = filteredMeetings.filter(m => {
+    if (!lastWeekRange) return false;
     const mDate = new Date(m.date + 'T00:00:00');
-    return mDate < weekRange.start;
+    return mDate >= lastWeekRange.start && mDate <= lastWeekRange.end;
+  });
+
+  const olderMeetings = filteredMeetings.filter(m => {
+    if (!lastWeekRange) return false;
+    const mDate = new Date(m.date + 'T00:00:00');
+    return mDate < lastWeekRange.start;
   });
 
   const formatDateShort = (d) => {
@@ -422,330 +406,219 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
     return `${day}-${month}-${year}`;
   };
 
-  const renderMeetingsTable = (meetingList) => (
-    <div style={{ overflowX: 'auto', marginBottom: '32px' }}>
-      <table style={{
-        width: '100%',
-        borderCollapse: 'collapse',
-        backgroundColor: '#fff',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-      }}>
-        <thead>
-          <tr style={{ backgroundColor: '#3498db', color: '#fff' }}>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>S.No</th>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Meeting Date</th>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>മണ്ഡലം (Zone)</th>
-            <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Saved Date</th>
-            <th style={{ padding: '12px', textAlign: 'center', border: '1px solid #ddd' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {meetingList.map((meeting, index) => (
-            <tr key={meeting.meetingId} style={{
-              backgroundColor: index % 2 === 0 ? '#fff' : '#f9f9f9'
-            }}>
-              <td style={{ padding: '12px', border: '1px solid #ddd' }}>{index + 1}</td>
-              <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                {formatDateDisplay(meeting.date)}
-              </td>
-              <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                {meeting.zoneName || '-'}
-              </td>
-              <td style={{ padding: '12px', border: '1px solid #ddd' }}>
-                {formatDate(meeting.savedDate)}
-              </td>
-              <td style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
-                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                  <button
-                    onClick={() => handleView(meeting.meetingId)}
-                    style={{
-                      padding: '6px 12px',
-                      backgroundColor: '#3498db',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '14px'
-                    }}
-                  >
-                    റിപ്പോർട്ട്
-                  </button>
-                  {canEdit(meeting) && (
-                    <>
-                      <button
-                        onClick={() => handleEdit(meeting.meetingId)}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#f39c12',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(meeting.meetingId)}
-                        disabled={deletingId === meeting.meetingId}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#e74c3c',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: deletingId === meeting.meetingId ? 'not-allowed' : 'pointer',
-                          opacity: deletingId === meeting.meetingId ? 0.6 : 1,
-                          fontSize: '14px'
-                        }}
-                      >
-                        {deletingId === meeting.meetingId ? 'Deleting...' : 'Delete'}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  const renderActions = (meeting) => (
+    <div className="meeting-actions">
+      <button type="button" onClick={() => handleView(meeting.meetingId)}>
+        റിപ്പോർട്ട്
+      </button>
     </div>
   );
 
-  const CollapsibleSection = ({ title, children, defaultExpanded = true }) => {
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-    return (
-      <div className="report-section" style={{ marginBottom: '16px' }}>
-        <div 
-          onClick={() => setIsExpanded(!isExpanded)} 
-          style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            cursor: 'pointer',
-            padding: '4px 0'
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: '1.1rem' }}>{title}</h2>
-          <span style={{ 
-            fontSize: '1.2rem', 
-            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease'
-          }}>
-            ▼
-          </span>
-        </div>
-        {isExpanded && (
-          <div style={{ marginTop: '12px', animation: 'fadeIn 0.3s ease' }}>
-            {children}
-          </div>
-        )}
-      </div>
-    );
-  };
+  // One collapsed card per meeting; the actions open on tap
+  const renderMeetingsTable = (meetingList) => (
+    <ol className="report-cards">
+      {meetingList.map((meeting) => (
+        <li key={meeting.meetingId}>
+          <details className="report-card">
+            <summary>
+              <span className="report-card-text">
+                <span className="report-card-title">
+                  <span className="report-card-zone">{meeting.zoneName || '-'}</span>
+                  <span className="report-card-date nums">{formatDateDisplay(meeting.date)}</span>
+                </span>
+              </span>
+              <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div className="report-card-body">
+              <span className="report-card-meta nums">Saved {formatDate(meeting.savedDate)}</span>
+              {renderActions(meeting)}
+            </div>
+          </details>
+        </li>
+      ))}
+    </ol>
+  );
+
+  const renderLoadMore = () => (
+    <button
+      type="button"
+      onClick={handleLoadMore}
+      disabled={loadingMore}
+      className="btn-secondary load-more"
+    >
+      {loadingMore ? 'ലോഡ് ചെയ്യുന്നു...' : 'കൂടുതൽ റിപ്പോർട്ടുകൾ കാണുക'}
+    </button>
+  );
+
+  const CollapsibleSection = ({ title, children, defaultExpanded = true }) => (
+    <details className="report-section collapsible" open={defaultExpanded}>
+      <summary>
+        <h2>{title}</h2>
+        <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </summary>
+      <div className="collapsible-body">{children}</div>
+    </details>
+  );
 
   return (
-    <div className="container" style={{ paddingBottom: '30px' }}>
-      <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-        <h1 style={{ marginBottom: '4px' }}>മീറ്റിംഗ് റിപ്പോർട്ടുകൾ (Meeting Reports)</h1>
+    <div className="container">
+      <div className="page-head">
+        <h1>മീറ്റിംഗ് റിപ്പോർട്ടുകൾ</h1>
         {weekRange.start && weekRange.end && (
-          <div style={{ 
-            fontSize: '0.95rem', 
-            color: 'var(--primary)', 
-            fontWeight: '700',
-            background: 'var(--primary-light)',
-            display: 'inline-block',
-            padding: '6px 16px',
-            borderRadius: '20px',
-            marginTop: '8px'
-          }}>
-            📅 Reporting Week: {formatDateShort(weekRange.start)} - {formatDateShort(weekRange.end)}
-          </div>
+          <span className="week-tag nums">
+            Reporting Week: {formatDateShort(weekRange.start)} - {formatDateShort(weekRange.end)}
+          </span>
         )}
       </div>
 
-      {error && <div className="error" style={{ marginBottom: '20px', textAlign: 'center' }}>{error}</div>}
+      {error && <div className="error">{error}</div>}
 
       {!selectedReport ? (
         <>
-          {/* Filters */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '15px', 
-            marginBottom: '30px', 
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            background: 'var(--white)',
-            padding: '20px',
-            borderRadius: '16px',
-            boxShadow: 'var(--shadow-md)',
-            border: '1px solid var(--gray-100)'
-          }}>
-            <div style={{ flex: '2', minWidth: '250px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--gray-500)', marginBottom: '6px', textTransform: 'uppercase' }}>
-                Search Zone or Date
-              </label>
-              <input
-                type="text"
-                placeholder="🔎 മണ്ഡലം അല്ലെങ്കിൽ തീയതി തിരയുക..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--gray-200)',
-                  fontSize: '1rem',
-                  background: 'var(--gray-50)'
-                }}
-              />
-            </div>
-            
-            <div style={{ flex: '1', minWidth: '180px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--gray-500)', marginBottom: '6px', textTransform: 'uppercase' }}>
-                Pick Specific Date
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <details className="filter-panel" open={Boolean(searchTerm || filterDate)}>
+            <summary>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              Filter
+              {(searchTerm || filterDate) && <span className="filter-dot" aria-label="Filter on" />}
+              <svg className="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div className="filter-bar">
+              <div className="filter-search">
+                <label htmlFor="report-search">Search Zone or Date</label>
                 <input
+                  id="report-search"
+                  type="text"
+                  placeholder="മണ്ഡലം അല്ലെങ്കിൽ തീയതി തിരയുക..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              <div className="filter-date">
+                <label htmlFor="report-date">Pick Specific Date</label>
+                <input
+                  id="report-date"
                   type="date"
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--gray-200)',
-                    fontSize: '1rem',
-                    background: 'var(--gray-50)'
-                  }}
                 />
               </div>
-            </div>
 
-            {(searchTerm || filterDate) && (
-              <button 
-                onClick={() => {
-                  setSearchTerm('');
-                  setFilterDate('');
-                }}
-                style={{
-                  marginTop: '22px',
-                  padding: '10px 20px',
-                  background: 'var(--gray-100)',
-                  color: 'var(--gray-700)',
-                  border: 'none',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'var(--gray-200)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'var(--gray-100)'}
-              >
-                ✕ Clear All
-              </button>
-            )}
-          </div>
+              {(searchTerm || filterDate) && (
+                <button
+                  type="button"
+                  className="btn-quiet"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilterDate('');
+                  }}
+                >
+                  ✕ Clear All
+                </button>
+              )}
+            </div>
+          </details>
 
           {filteredMeetings.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
-              ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല (No meetings found)
+            <div className="empty-note">
+              ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല
             </div>
           ) : (
             <div>
               {weekMeetings.length > 0 && (
-                <>
-                  <h2 style={{ fontSize: '1.2rem', color: 'var(--primary)', marginBottom: '12px' }}>
-                    ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ (This Week)
-                  </h2>
+                <section className="report-group">
+                  <h2>ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ</h2>
                   {renderMeetingsTable(weekMeetings)}
-                </>
+                </section>
+              )}
+
+              {lastWeekRange && (
+                <section className="report-group">
+                  <h2>
+                    കഴിഞ്ഞ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ{' '}
+                    <span className="nums">({formatDateShort(lastWeekRange.start)} - {formatDateShort(lastWeekRange.end)})</span>
+                  </h2>
+                  {lastWeekMeetings.length > 0
+                    ? renderMeetingsTable(lastWeekMeetings)
+                    : <div className="empty-note">ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല</div>}
+                </section>
               )}
 
               {olderMeetings.length > 0 && (
-                <>
-                  <h2 style={{ fontSize: '1.2rem', color: 'var(--gray-600)', marginBottom: '12px', marginTop: '40px' }}>
-                    പഴയ റിപ്പോർട്ടുകൾ (Older Reports)
-                  </h2>
-                  {renderMeetingsTable(olderMeetings)}
-                </>
+                // Closed until needed; a search or date filter opens it so matches are visible
+                <details className="report-group collapsible" open={Boolean(searchTerm || filterDate)}>
+                  <summary>
+                    <h2 className="muted">
+                      പഴയ റിപ്പോർട്ടുകൾ
+                    </h2>
+                    <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </summary>
+                  <div className="collapsible-body">
+                    {renderMeetingsTable(olderMeetings)}
+                    {hasMore && renderLoadMore()}
+                  </div>
+                </details>
               )}
 
-              {hasMore && (
-                <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                  <button 
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    className="btn btn-secondary"
-                    style={{ padding: '10px 24px', fontSize: '1rem' }}
-                  >
-                    {loadingMore ? 'ലോഡ് ചെയ്യുന്നു...' : 'കൂടുതൽ റിപ്പോർട്ടുകൾ കാണുക (Load More)'}
-                  </button>
-                </div>
-              )}
+              {olderMeetings.length === 0 && hasMore && renderLoadMore()}
             </div>
           )}
         </>
       ) : (
         <div>
-          <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+          <div className="report-toolbar">
             <button
+              type="button"
+              className="btn-quiet"
               onClick={() => {
                 setSelectedReport(null);
                 setSelectedMeetingData(null);
               }}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#95a5a6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
             >
               ← Back to List
             </button>
-            <button
-              onClick={handleCopyReport}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
+            <button type="button" onClick={handleCopyReport}>
               Copy Report
             </button>
           </div>
 
           <div className="report-container">
-            <CollapsibleSection title="മീറ്റിംഗ് വിവരങ്ങൾ (Meeting Details)">
-              <p><strong>മണ്ഡലം (Zone):</strong> {selectedMeetingData.zoneName}</p>
-              <p><strong>തീയതി (Date):</strong> {selectedMeetingData.date}</p>
-              {selectedMeetingData.startTime && (
-                <p><strong>തുടങ്ങിയ സമയം (Start Time):</strong> {formatTime12h(selectedMeetingData.startTime)}</p>
-              )}
-              {selectedMeetingData.endTime && (
-                <p><strong>അവസാനിച്ച സമയം (End Time):</strong> {formatTime12h(selectedMeetingData.endTime)}</p>
-              )}
+            <CollapsibleSection title="മീറ്റിംഗ് വിവരങ്ങൾ">
+              <dl className="detail-list">
+                <dt>മണ്ഡലം</dt><dd>{selectedMeetingData.zoneName}</dd>
+                <dt>തീയതി</dt><dd className="nums">{selectedMeetingData.date}</dd>
+                {selectedMeetingData.startTime && (
+                  <><dt>തുടങ്ങിയ സമയം</dt><dd className="nums">{formatTime12h(selectedMeetingData.startTime)}</dd></>
+                )}
+                {selectedMeetingData.endTime && (
+                  <><dt>അവസാനിച്ച സമയം</dt><dd className="nums">{formatTime12h(selectedMeetingData.endTime)}</dd></>
+                )}
+              </dl>
             </CollapsibleSection>
 
-            <CollapsibleSection title="പങ്കെടുത്തവർ (Attendees)">
+            <CollapsibleSection title="പങ്കെടുത്തവർ">
               <pre className="report-content">{selectedReport.attendees || 'ആരുമില്ല'}</pre>
             </CollapsibleSection>
 
-            <CollapsibleSection title="ലീവ് ആയവർ (Leave)">
+            <CollapsibleSection title="ലീവ് ആയവർ">
               <pre className="report-content">{selectedReport.leaveAayavar || 'ആരുമില്ല'}</pre>
             </CollapsibleSection>
 
-            <CollapsibleSection title="അജണ്ടകൾ (Agendas)">
+            <CollapsibleSection title="അജണ്ടകൾ">
               <pre className="report-content">{selectedReport.agenda || 'അജണ്ടകളില്ല'}</pre>
             </CollapsibleSection>
 
-            <CollapsibleSection title="തീരുമാനങ്ങൾ (Minutes)">
+            <CollapsibleSection title="തീരുമാനങ്ങൾ">
               <pre className="report-content">{selectedReport.minutes || 'തീരുമാനങ്ങളില്ല'}</pre>
             </CollapsibleSection>
 
@@ -757,12 +630,6 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
           </div>
         </div>
       )}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 };

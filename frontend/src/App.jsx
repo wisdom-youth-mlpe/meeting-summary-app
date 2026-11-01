@@ -31,111 +31,31 @@ const AuthenticatedLayout = ({ children }) => {
     navigate('/login');
   };
 
-  const headerStyles = {
-    header: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: '24px',
-      padding: '16px',
-      background: 'var(--white)',
-      borderRadius: '16px',
-      boxShadow: 'var(--shadow-md)',
-    },
-    userInfo: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-    },
-    username: {
-      color: 'var(--primary)',
-      fontSize: '14px',
-      fontWeight: '600',
-      background: 'var(--primary-light)',
-      padding: '8px 16px',
-      borderRadius: '20px',
-    },
-    antiGravityBadge: {
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      color: 'white',
-      padding: '6px 12px',
-      borderRadius: '16px',
-      fontSize: '11px',
-      fontWeight: '700',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)',
-      animation: 'pulse 2s ease-in-out infinite',
-    },
-    logoutBtn: {
-      padding: '10px 20px',
-      background: 'var(--danger)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '10px',
-      cursor: 'pointer',
-      fontFamily: 'Anek Malayalam, sans-serif',
-      fontSize: '0.85rem',
-      fontWeight: '600',
-      transition: 'all 0.2s ease',
-    },
-    contentWrapper: {
-      paddingBottom: '90px', // Space for bottom navigation
-    },
-  };
-
   return (
     <div>
-      <header style={headerStyles.header}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ 
-            fontSize: '18px', 
-            fontWeight: '800', 
-            color: 'var(--primary)',
-            letterSpacing: '-0.5px'
-          }}>
-            Wisdom MLP E Meetings
-          </span>
-          <div style={{ ...headerStyles.userInfo, marginTop: '4px' }}>
-            {user && (
-              <span style={headerStyles.username}>
-                {user.username}
-              </span>
-            )}
-            {isAntiGravity && (
-              <span style={headerStyles.antiGravityBadge}>
-                ⚡ ANTI-GRAVITY
-              </span>
-            )}
+      <header className="app-header">
+        <div className="app-header-inner">
+          <div className="app-header-id">
+            <span className="app-title">Wisdom MLP E Meetings</span>
+            <span className="app-user">
+              {user && <span className="nums">{user.username}</span>}
+              {isAntiGravity && <span className="app-user-badge">ANTI-GRAVITY</span>}
+            </span>
           </div>
+          <button type="button" onClick={handleLogout} className="app-logout">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            ലോഗൗട്ട്
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          style={headerStyles.logoutBtn}
-        >
-          ലോഗൗട്ട്
-        </button>
       </header>
 
-      {/* Main content with bottom padding */}
-      <div style={headerStyles.contentWrapper}>
-        {children}
-      </div>
+      <main className="app-main">{children}</main>
 
-      {/* Deployment Version - Hidden or subtle */}
-      <div style={{
-        position: 'fixed',
-        bottom: '80px',
-        right: '10px',
-        fontSize: '10px',
-        color: 'var(--gray-400)',
-        opacity: 0.5,
-        pointerEvents: 'none',
-        zIndex: 1000
-      }}>
-        v1.0.3 - 2026.04.28
-      </div>
+      <div className="app-version">v1.0.3 - 2026.04.28</div>
 
       {/* Bottom Navigation */}
       <BottomNavigation />
