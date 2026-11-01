@@ -25,7 +25,47 @@ env:
   IMAGE_NAME_API: wisdom-youth-mlpe/meeting-summary-backend
 
 jobs:
+  # Deploys run only when every test passes
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Backend runs on Node 18 in production (backend/Dockerfile)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Cache MongoDB test binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+
+      - name: Backend tests
+        working-directory: backend
+        run: |
+          npm ci
+          npm test
+
+      # Frontend builds on Node 20 (frontend/Dockerfile)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Frontend tests
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
