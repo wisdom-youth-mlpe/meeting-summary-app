@@ -127,9 +127,18 @@ jobs:
 
             # Restore production under the dev name; --drop replaces each collection.
             # The dev user may not drop the whole database, so dev-only collections stay.
+            # A database in the URI makes mongorestore skip everything not already
+            # named after it, so drop it from the path and authenticate against it
+            # explicitly unless the URI already says where to authenticate
+            RESTORE_URI=$(echo "$DEV_URI" | sed -E "s#^(mongodb(\+srv)?://[^/]*)/$DEV_DB#\1/#")
+            case "$RESTORE_URI" in
+              *authSource=*) ;;
+              *\?*) RESTORE_URI="$RESTORE_URI&authSource=$DEV_DB" ;;
+              *) RESTORE_URI="$RESTORE_URI?authSource=$DEV_DB" ;;
+            esac
             docker run --rm -i --network "$DEV_NET" "$TOOLS_IMAGE" \
-              mongorestore --uri="$DEV_URI" --gzip --archive --drop \
-              --nsFrom="$PROD_DB.*" --nsTo="$DEV_DB.*" < "$PROD_DUMP"
+              mongorestore --uri="$RESTORE_URI" --gzip --archive --drop \
+              --nsInclude="$PROD_DB.*" --nsFrom="$PROD_DB.*" --nsTo="$DEV_DB.*" < "$PROD_DUMP"
 
             echo "Dev collections (after):"; count_docs "$DEV_URI" "$DEV_NET"
             echo "Done."
