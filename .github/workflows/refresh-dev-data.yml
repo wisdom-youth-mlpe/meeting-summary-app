@@ -1,0 +1,128 @@
+# Refresh Dev Data
+#
+# Copies the production database into the dev database, users included, so
+# dev.meeting.wisdommlpe.site shows the same data as production.
+#
+# - Production is only read (mongodump); nothing is written to it.
+# - The dev database is backed up first, then replaced.
+# - Database locations come from the server's own env files:
+#     /srv/apps/meeting-summary/.env           (production)
+#     /srv/apps/meeting-summary-dev/.env.dev   (dev)
+# - Refuses to run if both point at the same database.
+#
+# Run from GitHub: Actions -> Refresh Dev Data -> Run workflow.
+# Leave "dry_run" ticked to only check settings and count documents.
+
+name: Refresh Dev Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only check settings and count documents; copy nothing"
+        type: boolean
+        default: true
+
+concurrency:
+  group: refresh-dev-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy production data into dev
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DRY_RUN
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+
+            PROD_ENV=/srv/apps/meeting-summary/.env
+            DEV_ENV=/srv/apps/meeting-summary-dev/.env.dev
+            BACKUP_DIR=/srv/backups/meeting-summary-dev
+            TOOLS_IMAGE=mongo:7
+
+            read_uri() {
+              grep -E '^MONGODB_URI=' "$1" | tail -1 | cut -d= -f2- | tr -d "\"'" | tr -d '\r'
+            }
+            # Database name: the path after the host, before any ?options
+            db_name() {
+              echo "$1" | sed -E 's#^mongodb(\+srv)?://[^/]*/?##; s#\?.*$##'
+            }
+            # Host part only, credentials stripped, for logs and comparison
+            db_host() {
+              echo "$1" | sed -E 's#^mongodb(\+srv)?://##; s#/.*$##; s#^.*@##'
+            }
+            # Containers reach a localhost database through the host network,
+            # anything else through the shared infra network
+            network_for() {
+              case "$(db_host "$1")" in
+                localhost*|127.0.0.1*) echo host ;;
+                *) echo infra ;;
+              esac
+            }
+
+            PROD_URI=$(read_uri "$PROD_ENV")
+            DEV_URI=$(read_uri "$DEV_ENV")
+            [ -n "$PROD_URI" ] || { echo "No MONGODB_URI in $PROD_ENV"; exit 1; }
+            [ -n "$DEV_URI" ] || { echo "No MONGODB_URI in $DEV_ENV"; exit 1; }
+
+            PROD_DB=$(db_name "$PROD_URI")
+            DEV_DB=$(db_name "$DEV_URI")
+            [ -n "$PROD_DB" ] || { echo "Production URI names no database"; exit 1; }
+            [ -n "$DEV_DB" ] || { echo "Dev URI names no database"; exit 1; }
+
+            echo "Production: $(db_host "$PROD_URI") / $PROD_DB"
+            echo "Dev:        $(db_host "$DEV_URI") / $DEV_DB"
+
+            if [ "$(db_host "$PROD_URI")" = "$(db_host "$DEV_URI")" ] && [ "$PROD_DB" = "$DEV_DB" ]; then
+              echo "Dev and production use the same database. Refusing to continue."
+              exit 1
+            fi
+
+            PROD_NET=$(network_for "$PROD_URI")
+            DEV_NET=$(network_for "$DEV_URI")
+
+            count_docs() { # uri network
+              docker run --rm --network "$2" "$TOOLS_IMAGE" mongosh "$1" --quiet --eval '
+                db.getCollectionNames().sort().forEach(c => print("  " + c + ": " + db.getCollection(c).countDocuments()))'
+            }
+
+            echo "Production collections:"; count_docs "$PROD_URI" "$PROD_NET"
+            echo "Dev collections (before):"; count_docs "$DEV_URI" "$DEV_NET"
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "Dry run: nothing copied."
+              exit 0
+            fi
+
+            mkdir -p "$BACKUP_DIR"
+            STAMP=$(date +%Y-%m-%d_%H-%M-%S)
+            echo "Backing up dev to $BACKUP_DIR/dev-$STAMP.archive.gz"
+            docker run --rm --network "$DEV_NET" -v "$BACKUP_DIR:/backup" "$TOOLS_IMAGE" \
+              mongodump --uri="$DEV_URI" --gzip --archive="/backup/dev-$STAMP.archive.gz" --quiet
+            # Keep the five newest dev backups
+            ls -1t "$BACKUP_DIR"/dev-*.archive.gz | tail -n +6 | xargs -r rm -f
+
+            echo "Copying production into dev"
+            TMP=$(mktemp -d)
+            trap 'rm -rf "$TMP"' EXIT
+            docker run --rm --network "$PROD_NET" -v "$TMP:/work" "$TOOLS_IMAGE" \
+              mongodump --uri="$PROD_URI" --gzip --archive=/work/prod.archive.gz --quiet
+
+            # Exact mirror: clear dev, then restore production under the dev name
+            docker run --rm --network "$DEV_NET" "$TOOLS_IMAGE" mongosh "$DEV_URI" --quiet --eval 'db.dropDatabase()'
+            docker run --rm --network "$DEV_NET" -v "$TMP:/work" "$TOOLS_IMAGE" \
+              mongorestore --uri="$DEV_URI" --gzip --archive=/work/prod.archive.gz \
+              --nsFrom="$PROD_DB.*" --nsTo="$DEV_DB.*" --quiet
+
+            echo "Dev collections (after):"; count_docs "$DEV_URI" "$DEV_NET"
+            echo "Done."
