@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardStats, getZones, getMeetingReport } from '../services/api';
-import { loadMeetingDay, getReportingWeek, toDateKey } from '../services/week';
+import { loadWeekStart, getReportingWeek, toDateKey } from '../services/week';
 import { getUser, hasRole } from '../services/auth';
 import AttendanceSummary from './AttendanceSummary';
 
@@ -31,7 +31,7 @@ const Dashboard = () => {
     }, []);
 
     const fetchMeetingDay = async () => {
-        const day = await loadMeetingDay();
+        const day = await loadWeekStart();
         setMeetingDay(day);
         initializeDates('week', day);
     };

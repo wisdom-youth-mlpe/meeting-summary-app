@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import MeetingReport from '../components/MeetingReport';
 import { getAllMeetings } from '../services/api';
-import { loadMeetingDay } from '../services/week';
+import { loadWeekStart } from '../services/week';
 
 vi.mock('../services/api', () => ({
   getAllMeetings: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock('../services/api', () => ({
 }));
 vi.mock('../services/week', async (importOriginal) => ({
   ...(await importOriginal()),
-  loadMeetingDay: vi.fn(),
+  loadWeekStart: vi.fn(),
 }));
 
 const meeting = (meetingId, zoneName, date) => ({ meetingId, zoneName, zoneId: zoneName, date, savedDate: `${date}T10:00:00Z` });
@@ -21,7 +21,7 @@ const meeting = (meetingId, zoneName, date) => ({ meetingId, zoneName, zoneId: z
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-30T12:00:00'));
-  loadMeetingDay.mockResolvedValue(3);
+  loadWeekStart.mockResolvedValue(3);
   localStorage.setItem('meeting_app_token', 't');
   localStorage.setItem('meeting_app_user', JSON.stringify({ username: 'a', roles: ['admin'] }));
   getAllMeetings.mockResolvedValue({

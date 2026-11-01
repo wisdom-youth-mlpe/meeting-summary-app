@@ -1231,8 +1231,8 @@ router.get('/qhls/week-status', async (req, res) => {
 
     const weekOffset = parseInt(req.query.weekOffset) || 0;
     const zones = filterZonesForUser(await mongoService.getZones(), req.user);
-    const meetingDay = parseInt(await mongoService.getSetting('district_meeting_day', 3), 10);
-    const data = await qhlsService.getWeekStatus(weekOffset, meetingDay, zones);
+    const weekStart = parseInt(await mongoService.getSetting('reporting_week_start', 0), 10);
+    const data = await qhlsService.getWeekStatus(weekOffset, weekStart, zones);
 
     res.json({ success: true, data });
   } catch (error) {
