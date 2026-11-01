@@ -45,7 +45,10 @@ describe('MeetingReport', () => {
     await screen.findByText('Zone This');
 
     expect(within(section('ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ')).getByText('Zone This')).toBeInTheDocument();
-    expect(within(section(/കഴിഞ്ഞ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ/)).getByText('Zone Last')).toBeInTheDocument();
+    const last = section(/കഴിഞ്ഞ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ/);
+    expect(within(last).getByText('Zone Last')).toBeInTheDocument();
+    expect(last.tagName).toBe('DETAILS');
+    expect(last.open).toBe(false);
     const older = section('പഴയ റിപ്പോർട്ടുകൾ');
     expect(within(older).getByText('Zone Old')).toBeInTheDocument();
     expect(older.tagName).toBe('DETAILS');

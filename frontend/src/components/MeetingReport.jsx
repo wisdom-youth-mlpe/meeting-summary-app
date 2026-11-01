@@ -541,15 +541,23 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
               )}
 
               {lastWeekRange && (
-                <section className="report-group">
-                  <h2>
-                    കഴിഞ്ഞ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ{' '}
-                    <span className="nums">({formatDateShort(lastWeekRange.start)} - {formatDateShort(lastWeekRange.end)})</span>
-                  </h2>
-                  {lastWeekMeetings.length > 0
-                    ? renderMeetingsTable(lastWeekMeetings)
-                    : <div className="empty-note">ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല</div>}
-                </section>
+                // Closed until tapped, like older reports; a search or date filter opens it
+                <details className="report-group collapsible" open={Boolean(searchTerm || filterDate)}>
+                  <summary>
+                    <h2>
+                      കഴിഞ്ഞ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ{' '}
+                      <span className="nums">({formatDateShort(lastWeekRange.start)} - {formatDateShort(lastWeekRange.end)})</span>
+                    </h2>
+                    <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </summary>
+                  <div className="collapsible-body">
+                    {lastWeekMeetings.length > 0
+                      ? renderMeetingsTable(lastWeekMeetings)
+                      : <div className="empty-note">ഒരു മീറ്റിംഗും കണ്ടെത്തിയില്ല</div>}
+                  </div>
+                </details>
               )}
 
               {olderMeetings.length > 0 && (
