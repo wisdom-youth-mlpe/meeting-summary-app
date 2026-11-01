@@ -15,14 +15,14 @@ const FORM_STORAGE_KEY = 'meetingFormDraft';
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
 // Older meetings have no status; derive it from the checkbox and detail fields they stored
-const deriveQhlsStatus = (row) => {
+export const deriveQhlsStatus = (row) => {
   if (row.status) return row.status;
   if (row.hasQhls === false) return 'illa';
   if (row.day || row.faculty || parseInt(row.male, 10) || parseInt(row.female, 10)) return 'nadannu';
   return '';
 };
 
-const buildQhlsRows = (units = [], existingData = []) => {
+export const buildQhlsRows = (units = [], existingData = []) => {
   const defaultQhlsRow = { unit: '', status: '', hasQhls: true };
   const toRow = (row) => ({ ...defaultQhlsRow, ...row, status: deriveQhlsStatus(row) });
 
