@@ -1,34 +1,33 @@
 import { getSetting } from './api';
 
-// Used only when the district meeting day setting cannot be read
-const FALLBACK_MEETING_DAY = 3; // Wednesday
+// Used when the reporting week setting is unset or cannot be read
+const DEFAULT_WEEK_START = 0; // Sunday
 
 /**
- * The district meeting day (0 = Sunday … 6 = Saturday) from settings.
+ * The day reporting weeks start on (0 = Sunday … 6 = Saturday), set by admin.
  */
-export const loadMeetingDay = async () => {
+export const loadWeekStart = async () => {
   try {
-    const response = await getSetting('district_meeting_day');
+    const response = await getSetting('reporting_week_start');
     if (response.success && response.value !== null && response.value !== undefined) {
       return parseInt(response.value, 10);
     }
   } catch (err) {
-    console.error('Failed to fetch meeting day setting', err);
+    console.error('Failed to fetch reporting week setting', err);
   }
-  return FALLBACK_MEETING_DAY;
+  return DEFAULT_WEEK_START;
 };
 
 /**
- * The reporting week that contains `today`. Weeks start on the meeting day;
- * on the meeting day itself the week that just finished is reported.
+ * The reporting week that contains `today`, moved by `offset` weeks
+ * (-1 for last week). Weeks run from the start day for seven days.
  * Returns local-midnight Date objects for the first and last day.
  */
-export const getReportingWeek = (meetingDay, today = new Date()) => {
+export const getReportingWeek = (startDay, today = new Date(), offset = 0) => {
   const base = new Date(today);
   base.setHours(0, 0, 0, 0);
   const start = new Date(base);
-  const diff = base.getDay() === meetingDay ? 7 : (base.getDay() - meetingDay + 7) % 7;
-  start.setDate(base.getDate() - diff);
+  start.setDate(base.getDate() - ((base.getDay() - startDay + 7) % 7) + offset * 7);
 
   // Count from start, not from today: the week may begin in the previous month
   const end = new Date(start);

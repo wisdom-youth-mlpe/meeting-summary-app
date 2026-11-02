@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAllMeetings, getMeetingReport, deleteMeeting } from '../services/api';
-import { loadMeetingDay, getReportingWeek } from '../services/week';
+import { loadWeekStart, getReportingWeek } from '../services/week';
 import { getAccessibleZones, canEditMeetings, hasAnyRole, getUser, hasRole } from '../services/auth';
 import { filterMeetingsByZoneAccess } from '../services/zoneHelper';
 
@@ -39,7 +39,7 @@ const MeetingReport = () => {
   }, []);
 
   const fetchMeetingDay = async () => {
-    setWeekRange(getReportingWeek(await loadMeetingDay()));
+    setWeekRange(getReportingWeek(await loadWeekStart()));
   };
 
   useEffect(() => {

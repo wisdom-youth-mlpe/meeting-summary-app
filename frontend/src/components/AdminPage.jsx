@@ -12,8 +12,8 @@ const AdminPage = () => {
             path: '/admin/users'
         },
         {
-            title: 'Edit District Meeting Day',
-            description: 'Change the day used to define the weekly cycle.',
+            title: 'Reporting Week & Meeting Day',
+            description: 'Set the day reporting weeks start, and the district meeting day.',
             icon: 'calendar',
             path: '/admin/meeting-day'
         },
