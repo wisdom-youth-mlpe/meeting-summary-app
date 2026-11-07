@@ -478,8 +478,9 @@ const MeetingForm = () => {
     // Rebuild qhlsData whenever selectedZone or zoneUnits change
     // This ensures that when editing, once units for the zone are loaded, we merge them with existing qhls data
     if (prevZoneRef.current !== selectedZone) {
-      // Zone changed or initialized - rebuild with merged draft/edit data if available
-      const merged = buildQhlsRows(zoneUnits, qhlsDraftRef.current || qhlsData || []);
+      // Zone changed or initialized - rebuild with merged draft/edit data if available.
+      // Never carry the previous zone's rows over: buildQhlsRows keeps units outside the zone list.
+      const merged = buildQhlsRows(zoneUnits, qhlsDraftRef.current || []);
       setQhlsData(merged);
       qhlsDraftRef.current = null;
       prevZoneRef.current = selectedZone;
