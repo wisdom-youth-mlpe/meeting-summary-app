@@ -56,19 +56,19 @@ describe('week queries', () => {
   });
 });
 
-describe('getReportingWeek (weeks start on the meeting day)', () => {
+describe('getReportingWeek (the week containing today, from the start day)', () => {
   afterEach(() => jest.useRealTimers());
 
   const at = (iso) => jest.useFakeTimers({ now: new Date(iso), doNotFake: ['nextTick', 'setImmediate'] });
 
   test.each([
-    // [today, meetingDay, offset, weekStart, weekEnd]
-    ['2026-10-30T10:00:00Z', 3, 0, '2026-10-28', '2026-11-03'], // Friday, Wednesday meetings
-    ['2026-10-28T10:00:00Z', 3, 0, '2026-10-21', '2026-10-27'], // meeting day reports the week just ended
-    ['2026-10-30T10:00:00Z', 1, 0, '2026-10-26', '2026-11-01'], // Monday meetings
-    ['2026-10-30T10:00:00Z', 3, -1, '2026-10-21', '2026-10-27'], // last week
-    ['2026-11-02T10:00:00Z', 3, 0, '2026-10-28', '2026-11-03'], // spans two months
-  ])('%s day %i offset %i', (now, day, offset, weekStart, weekEnd) => {
+    // [today, startDay, offset, weekStart, weekEnd]
+    ['2026-11-04T10:00:00Z', 0, 0, '2026-11-01', '2026-11-07'], // Wednesday, Sunday weeks
+    ['2026-11-04T10:00:00Z', 0, -1, '2026-10-25', '2026-10-31'], // last week
+    ['2026-11-01T10:00:00Z', 0, 0, '2026-11-01', '2026-11-07'], // start day opens the week
+    ['2026-11-04T10:00:00Z', 1, 0, '2026-11-02', '2026-11-08'], // Monday weeks
+    ['2026-11-02T10:00:00Z', 0, -1, '2026-10-25', '2026-10-31'], // spans two months
+  ])('%s start %i offset %i', (now, day, offset, weekStart, weekEnd) => {
     at(now);
     expect(qhlsService.getReportingWeek(day, offset)).toEqual({ weekStart, weekEnd });
   });

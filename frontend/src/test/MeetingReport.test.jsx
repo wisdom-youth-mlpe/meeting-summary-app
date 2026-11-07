@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import MeetingReport from '../components/MeetingReport';
 import { getAllMeetings } from '../services/api';
-import { loadMeetingDay } from '../services/week';
+import { loadWeekStart } from '../services/week';
 
 vi.mock('../services/api', () => ({
   getAllMeetings: vi.fn(),
@@ -12,24 +12,24 @@ vi.mock('../services/api', () => ({
 }));
 vi.mock('../services/week', async (importOriginal) => ({
   ...(await importOriginal()),
-  loadMeetingDay: vi.fn(),
+  loadWeekStart: vi.fn(),
 }));
 
 const meeting = (meetingId, zoneName, date) => ({ meetingId, zoneName, zoneId: zoneName, date, savedDate: `${date}T10:00:00Z` });
 
-// Friday 30 Oct 2026 with Wednesday meetings: this week 28 Oct - 3 Nov, last week 21 - 27 Oct
+// Wednesday 4 Nov 2026, Sunday weeks: this week 1 - 7 Nov, last week 25 - 31 Oct
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-10-30T12:00:00'));
-  loadMeetingDay.mockResolvedValue(3);
+  vi.setSystemTime(new Date('2026-11-04T12:00:00'));
+  loadWeekStart.mockResolvedValue(0);
   localStorage.setItem('meeting_app_token', 't');
   localStorage.setItem('meeting_app_user', JSON.stringify({ username: 'a', roles: ['admin'] }));
   getAllMeetings.mockResolvedValue({
     success: true,
     meetings: [
-      meeting('M1', 'Zone This', '2026-10-28'),
-      meeting('M2', 'Zone Last', '2026-10-22'),
-      meeting('M3', 'Zone Old', '2026-10-14'),
+      meeting('M1', 'Zone This', '2026-11-02'),
+      meeting('M2', 'Zone Last', '2026-10-28'),
+      meeting('M3', 'Zone Old', '2026-10-21'),
     ],
     pagination: { total: 3, page: 1, pages: 1 },
   });
@@ -45,7 +45,10 @@ describe('MeetingReport', () => {
     await screen.findByText('Zone This');
 
     expect(within(section('ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ')).getByText('Zone This')).toBeInTheDocument();
-    expect(within(section(/കഴിഞ്ഞ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ/)).getByText('Zone Last')).toBeInTheDocument();
+    const last = section(/കഴിഞ്ഞ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ/);
+    expect(within(last).getByText('Zone Last')).toBeInTheDocument();
+    expect(last.tagName).toBe('DETAILS');
+    expect(last.open).toBe(false);
     const older = section('പഴയ റിപ്പോർട്ടുകൾ');
     expect(within(older).getByText('Zone Old')).toBeInTheDocument();
     expect(older.tagName).toBe('DETAILS');
@@ -54,7 +57,7 @@ describe('MeetingReport', () => {
 
   test('last week heading shows its dates', async () => {
     render(<MemoryRouter><MeetingReport /></MemoryRouter>);
-    expect(await screen.findByText(/21 Oct - 27 Oct/)).toBeInTheDocument();
+    expect(await screen.findByText(/25 Oct - 31 Oct/)).toBeInTheDocument();
   });
 
   test('each report card offers only the report button', async () => {

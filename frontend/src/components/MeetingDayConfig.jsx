@@ -4,8 +4,9 @@ import { getToken } from '../services/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-const MeetingDayConfig = () => {
-    const [day, setDay] = useState(3); // Default to Wednesday
+// One day-of-week setting: loads it, lets admin pick a day, saves it
+const DaySetting = ({ settingKey, defaultDay, title, description, label, savedMessage }) => {
+    const [day, setDay] = useState(defaultDay);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
@@ -26,12 +27,12 @@ const MeetingDayConfig = () => {
 
     const fetchDay = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/settings/district_meeting_day`);
+            const response = await axios.get(`${API_BASE_URL}/api/settings/${settingKey}`);
             if (response.data.success && response.data.value !== null) {
                 setDay(response.data.value);
             }
         } catch (error) {
-            console.error('Error fetching meeting day:', error);
+            console.error(`Error fetching ${settingKey}:`, error);
         } finally {
             setLoading(false);
         }
@@ -43,31 +44,30 @@ const MeetingDayConfig = () => {
         try {
             const response = await axios.post(
                 `${API_BASE_URL}/api/settings`,
-                { key: 'district_meeting_day', value: parseInt(day) },
+                { key: settingKey, value: parseInt(day) },
                 { headers: { 'Authorization': `Bearer ${getToken()}` } }
             );
             if (response.data.success) {
-                setMessage('✅ Meeting day updated successfully!');
+                setMessage(`✅ ${savedMessage}`);
             }
         } catch (error) {
-            setMessage('❌ Error updating meeting day');
+            setMessage('❌ Could not save. Try again.');
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) return <div className="container">Loading...</div>;
+    if (loading) return <div className="card" style={{ maxWidth: '600px', margin: '0 auto 24px', padding: '32px' }}>Loading...</div>;
 
     return (
-        <div className="container">
-            <div className="card" style={{ maxWidth: '600px', margin: '0 auto', padding: '32px' }}>
-                <h1 style={{ marginBottom: '8px' }}>Edit District Meeting Day</h1>
+            <div className="card" style={{ maxWidth: '600px', margin: '0 auto 24px', padding: '32px' }}>
+                <h1 style={{ marginBottom: '8px' }}>{title}</h1>
                 <p style={{ color: 'var(--gray-600)', marginBottom: '24px' }}>
-                    This setting defines the start of the weekly reporting cycle. The dashboard will use this day to calculate "This Week".
+                    {description}
                 </p>
 
                 <div className="form-group">
-                    <label style={{ fontWeight: '700', display: 'block', marginBottom: '12px' }}>Select Meeting Day:</label>
+                    <label style={{ fontWeight: '700', display: 'block', marginBottom: '12px' }}>{label}</label>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {days.map((d) => (
                             <label key={d.value} style={{
@@ -83,7 +83,7 @@ const MeetingDayConfig = () => {
                             }}>
                                 <input
                                     type="radio"
-                                    name="meetingDay"
+                                    name={settingKey}
                                     value={d.value}
                                     checked={day === d.value}
                                     onChange={(e) => setDay(parseInt(e.target.value))}
@@ -123,11 +123,31 @@ const MeetingDayConfig = () => {
                         fontSize: '0.95rem'
                     }}
                 >
-                    {saving ? 'Saving...' : 'Save Settings'}
+                    {saving ? 'Saving...' : 'Save'}
                 </button>
             </div>
-        </div>
     );
 };
+
+const MeetingDayConfig = () => (
+    <div className="container">
+        <DaySetting
+            settingKey="reporting_week_start"
+            defaultDay={0}
+            title="റിപ്പോർട്ടിംഗ് ആഴ്ച"
+            description="The day each reporting week starts. Dashboard, Reports and QHLS show this week and last week from this day for seven days."
+            label="റിപ്പോർട്ടിംഗ് ആഴ്ച തുടങ്ങുന്ന ദിവസം:"
+            savedMessage="Reporting week updated"
+        />
+        <DaySetting
+            settingKey="district_meeting_day"
+            defaultDay={3}
+            title="Edit District Meeting Day"
+            description="The day the district meeting is held."
+            label="Select Meeting Day:"
+            savedMessage="Meeting day updated successfully!"
+        />
+    </div>
+);
 
 export default MeetingDayConfig;

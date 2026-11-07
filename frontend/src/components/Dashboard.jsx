@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardStats, getZones, getMeetingReport } from '../services/api';
-import { loadMeetingDay, getReportingWeek, toDateKey } from '../services/week';
+import { loadWeekStart, getReportingWeek, toDateKey } from '../services/week';
 import { getUser, hasRole } from '../services/auth';
 import AttendanceSummary from './AttendanceSummary';
 
@@ -22,17 +22,22 @@ const Dashboard = () => {
     const [selectedReport, setSelectedReport] = useState(null);
     const [selectedMeetingData, setSelectedMeetingData] = useState(null);
     const [reportLoading, setReportLoading] = useState(false);
-    const [meetingDay, setMeetingDay] = useState(null);
+    const [weekStart, setWeekStart] = useState(null);
+    // Week view shows last week and this week side by side: dates and stats per week
+    const [weekRanges, setWeekRanges] = useState(null);
+    const [weekStats, setWeekStats] = useState(null);
+    // The week (dates + stats) a zone's attendance view was opened from
+    const [detailWeek, setDetailWeek] = useState(null);
     const latestRequestRef = useRef(0);
 
     useEffect(() => {
         loadZones();
-        fetchMeetingDay();
+        fetchWeekStart();
     }, []);
 
-    const fetchMeetingDay = async () => {
-        const day = await loadMeetingDay();
-        setMeetingDay(day);
+    const fetchWeekStart = async () => {
+        const day = await loadWeekStart();
+        setWeekStart(day);
         initializeDates('week', day);
     };
 
@@ -40,7 +45,7 @@ const Dashboard = () => {
         if (startDate && endDate) {
             fetchStats();
         }
-    }, [selectedZone, startDate, endDate]);
+    }, [selectedZone, startDate, endDate, weekRanges]);
 
     // Reset view mode when zone changes to 'All' while in attendance_summary view
     useEffect(() => {
@@ -73,10 +78,15 @@ const Dashboard = () => {
         if (filterType === '7days') {
             start.setDate(today.getDate() - 7);
         } else if (filterType === 'week') {
-            const day = targetDay !== null ? targetDay : meetingDay;
-            if (day === null) return; // meeting day still loading; fetchMeetingDay sets the week
-            // Same reporting week as the Reports tab
+            const day = targetDay !== null ? targetDay : weekStart;
+            if (day === null) return; // setting still loading; fetchWeekStart sets the week
+            // Same reporting weeks as the Reports tab
+            const last = getReportingWeek(day, today, -1);
             ({ start, end } = getReportingWeek(day, today));
+            setWeekRanges({
+                last: { start: toDateKey(last.start), end: toDateKey(last.end) },
+                this: { start: toDateKey(start), end: toDateKey(end) },
+            });
         } else if (filterType === 'month') {
             start.setDate(1); // 1st of month
         } else if (filterType === 'custom') {
@@ -90,6 +100,7 @@ const Dashboard = () => {
 
     const handleDateFilterChange = (filter) => {
         setDateFilter(filter);
+        if (filter !== 'week') setWeekRanges(null);
         if (filter !== 'custom') {
             initializeDates(filter);
         }
@@ -100,6 +111,21 @@ const Dashboard = () => {
         const requestId = ++latestRequestRef.current;
         setLoading(true);
         try {
+            if (dateFilter === 'week' && weekRanges) {
+                const [last, current] = await Promise.all([
+                    getDashboardStats(weekRanges.last.start, weekRanges.last.end, selectedZone),
+                    getDashboardStats(weekRanges.this.start, weekRanges.this.end, selectedZone),
+                ]);
+                if (requestId !== latestRequestRef.current) return;
+                if (last.success && current.success) {
+                    setWeekStats({ last: last.data, this: current.data });
+                    setError(null);
+                } else {
+                    setError('Failed to fetch data');
+                }
+                return;
+            }
+
             const response = await getDashboardStats(startDate, endDate, selectedZone);
             if (requestId !== latestRequestRef.current) return;
             if (response.success) {
@@ -240,8 +266,14 @@ const Dashboard = () => {
         </details>
     );
 
-    const renderOverview = () => {
+    // week: null for the single-range views, otherwise { key: 'last' | 'this', start, end }
+    const renderOverview = (stats, week = null) => {
         if (!stats) return null;
+        // Card ids must stay unique when both weeks are on screen
+        const idPrefix = week ? `${week.key}-` : '';
+        const rangeStart = week ? week.start : startDate;
+        const rangeEnd = week ? week.end : endDate;
+        const isLastWeek = week?.key === 'last';
 
         const { totalMeetings, totalMembers, attendanceRegister, noMeetingZones, zonesWithMeetings, consecutiveAbsence, latestLeaves, qhlsMissingBranches, currentWeek, meetingsList } = stats;
 
@@ -255,7 +287,7 @@ const Dashboard = () => {
         const overallPct = grandTotal > 0 ? ((totalPresent / grandTotal) * 100).toFixed(1) : 0;
 
         // Time period label based on filter
-        const periodLabel = dateFilter === 'month' ? 'ഈ മാസം' : (dateFilter === '7days' ? 'കഴിഞ്ഞ 7 ദിവസം' : 'ഈ ആഴ്ച');
+        const periodLabel = isLastWeek ? 'കഴിഞ്ഞ ആഴ്ച' : dateFilter === 'month' ? 'ഈ മാസം' : (dateFilter === '7days' ? 'കഴിഞ്ഞ 7 ദിവസം' : 'ഈ ആഴ്ച');
 
         // All Zones View - Show simplified dashboard
         if (selectedZone === 'All') {
@@ -273,19 +305,19 @@ const Dashboard = () => {
             return (
                 <div className="dashboard-grid">
                     <div className="dash-summary full-width">
-                        <button type="button" className="dash-stat" onClick={() => openCard('card-no-meeting')}>
+                        <button type="button" className="dash-stat" onClick={() => openCard(`${idPrefix}card-no-meeting`)}>
                             <span className="dash-stat-value nums">
                                 {zonesMet}<span className="dash-stat-of"> / {zoneTotal}</span>
                             </span>
                             <span className="dash-stat-label">മീറ്റിംഗ് നടന്ന മണ്ഡലങ്ങൾ</span>
                         </button>
                         {showQhls && (
-                            <button type="button" className={`dash-stat${qhlsMissingBranches?.length ? ' warn' : ''}`} onClick={() => openCard('card-qhls')}>
+                            <button type="button" className={`dash-stat${qhlsMissingBranches?.length ? ' warn' : ''}`} onClick={() => openCard(`${idPrefix}card-qhls`)}>
                                 <span className="dash-stat-value nums">{qhlsMissingBranches?.length || 0}</span>
                                 <span className="dash-stat-label">QHLS നടക്കാത്ത ശാഖകൾ</span>
                             </button>
                         )}
-                        <button type="button" className={`dash-stat${consecutiveAbsence.length ? ' warn' : ''}`} onClick={() => openCard('card-leaves')}>
+                        <button type="button" className={`dash-stat${consecutiveAbsence.length ? ' warn' : ''}`} onClick={() => openCard(`${idPrefix}card-leaves`)}>
                             <span className="dash-stat-value nums">{consecutiveAbsence.length}</span>
                             <span className="dash-stat-label">തുടർച്ചയായി 3 ലീവ്</span>
                         </button>
@@ -293,7 +325,7 @@ const Dashboard = () => {
 
                     {/* Zones WITHOUT meetings */}
                     <CollapsibleCard 
-                        id="card-no-meeting"
+                        id={`${idPrefix}card-no-meeting`}
                         className="full-width"
                         title={`${periodLabel} മീറ്റിംഗ് നടക്കാത്ത മണ്ഡലങ്ങൾ (${noMeetingZones.length})`}
                     >
@@ -353,12 +385,13 @@ const Dashboard = () => {
                             const ed = new Date(e + 'T00:00:00');
                             return `(${sd.toLocaleDateString('ml-IN', opts)} - ${ed.toLocaleDateString('ml-IN', opts)})`;
                         };
-                        const dateRange = (dateFilter === 'week' || dateFilter === '7days') ? fmtRange(startDate, endDate) : '';
+                        const dateRange = (dateFilter === 'week' || dateFilter === '7days') ? fmtRange(rangeStart, rangeEnd) : '';
+                        const weekWord = isLastWeek ? 'കഴിഞ്ഞ ആഴ്ചയിൽ' : 'ഈ ആഴ്ചയിൽ';
                         const whatsappMsg =
-                            `ഈ ആഴ്ചയിൽ മീറ്റിംഗ് കൂടിയ മണ്ഡലങ്ങൾ ${dateRange}\n${withList || 'ഒന്നുമില്ല'}\n\nഈ ആഴ്ചയിൽ മീറ്റിംഗ് കൂടാത്ത മണ്ഡലങ്ങൾ\n${withoutList || 'ഒന്നുമില്ല'}`;
+                            `${weekWord} മീറ്റിംഗ് കൂടിയ മണ്ഡലങ്ങൾ ${dateRange}\n${withList || 'ഒന്നുമില്ല'}\n\n${weekWord} മീറ്റിംഗ് കൂടാത്ത മണ്ഡലങ്ങൾ\n${withoutList || 'ഒന്നുമില്ല'}`;
                         const handleCopyWhatsApp = () => {
                             navigator.clipboard.writeText(whatsappMsg).then(() => {
-                                const btn = document.getElementById('wa-copy-btn');
+                                const btn = document.getElementById(`${idPrefix}wa-copy-btn`);
                                 if (btn) {
                                     btn.textContent = 'Copied!';
                                     setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
@@ -373,7 +406,7 @@ const Dashboard = () => {
                             >
                                 <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                     <h3 style={{ margin: 0, display: 'none' }}>WhatsApp Message</h3>
-                                    <button id="wa-copy-btn" className="wa-copy-btn" onClick={handleCopyWhatsApp}>
+                                    <button id={`${idPrefix}wa-copy-btn`} className="wa-copy-btn" onClick={handleCopyWhatsApp}>
                                         Copy
                                     </button>
                                 </div>
@@ -384,7 +417,7 @@ const Dashboard = () => {
 
                     {/* Members with 3+ Consecutive Leaves */}
                     <CollapsibleCard 
-                        id="card-leaves"
+                        id={`${idPrefix}card-leaves`}
                         className="full-width"
                         title="തുടർച്ചയായി 3 മീറ്റിംഗിൽ ലീവ് ആയ മെമ്പർമാർ"
                         defaultExpanded={false}
@@ -405,7 +438,7 @@ const Dashboard = () => {
                     {/* QHLS Missing Branches - Only show for week/7days filter */}
                     {(dateFilter === 'week' || dateFilter === '7days') && (
                         <CollapsibleCard 
-                            id="card-qhls"
+                            id={`${idPrefix}card-qhls`}
                             className="full-width"
                             title="QHLS നടക്കാത്ത ശാഖകൾ"
                             defaultExpanded={false}
@@ -430,7 +463,7 @@ const Dashboard = () => {
         if (totalMeetings === 0) {
             const noMeetingMsg = dateFilter === 'month'
                 ? 'ഈ മാസം മീറ്റിംഗ് നടന്നിട്ടില്ല'
-                : 'ഈ ആഴ്ച മീറ്റിംഗ് നടന്നിട്ടില്ല';
+                : `${periodLabel} മീറ്റിംഗ് നടന്നിട്ടില്ല`;
             return (
                 <div className="dashboard-grid">
                     <div className="card full-width no-meeting-card">
@@ -556,8 +589,8 @@ const Dashboard = () => {
                     <div className="card-header">
                         <h3>ഹാജർ സംഗ്രഹം</h3>
                         <div className="header-buttons">
-                            <button className="btn-link" onClick={() => setViewMode('attendance_summary')}>Attendance Register &rarr;</button>
-                            <button className="btn-link" onClick={() => setViewMode('attendance_sheet')}>Stats View &rarr;</button>
+                            <button className="btn-link" onClick={() => openDetail('attendance_summary', stats, rangeStart, rangeEnd)}>Attendance Register &rarr;</button>
+                            <button className="btn-link" onClick={() => openDetail('attendance_sheet', stats, rangeStart, rangeEnd)}>Stats View &rarr;</button>
                         </div>
                     </div>
                     <div className="table-responsive">
@@ -597,6 +630,39 @@ const Dashboard = () => {
         );
     };
 
+    const openDetail = (mode, detailStats, start, end) => {
+        setDetailWeek({ stats: detailStats, start, end });
+        setViewMode(mode);
+    };
+
+    // Last week and this week, each collapsed until tapped
+    const renderWeekSections = () => {
+        if (!weekRanges || !weekStats) return null;
+        const sections = [
+            { key: 'last', title: 'കഴിഞ്ഞ ആഴ്ച' },
+            { key: 'this', title: 'ഈ ആഴ്ച' },
+        ];
+        return sections.map(({ key, title }) => {
+            const range = weekRanges[key];
+            return (
+                <details key={key} className="report-group collapsible week-section">
+                    <summary>
+                        <h2>
+                            {title}{' '}
+                            <span className="nums">({formatDateShort(range.start)} - {formatDateShort(range.end)})</span>
+                        </h2>
+                        <svg className="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </summary>
+                    <div className="collapsible-body">
+                        {renderOverview(weekStats[key], { key, ...range })}
+                    </div>
+                </details>
+            );
+        });
+    };
+
     const renderAttendanceSummary = () => {
         // Only render when a specific zone is selected
         if (!selectedZone || selectedZone === 'All') {
@@ -613,17 +679,18 @@ const Dashboard = () => {
                 </div>
                 <AttendanceSummary
                     zoneId={selectedZone}
-                    startDate={startDate}
-                    endDate={endDate}
+                    startDate={detailWeek?.start || startDate}
+                    endDate={detailWeek?.end || endDate}
                 />
             </div>
         );
     };
 
     const renderAttendanceSheet = () => {
-        if (!stats) return null;
+        const sheetStats = detailWeek?.stats || stats;
+        if (!sheetStats) return null;
 
-        const { attendanceRegister } = stats;
+        const { attendanceRegister } = sheetStats;
 
         return (
             <div className="card full-width">
@@ -733,7 +800,8 @@ const Dashboard = () => {
                     </span>
                 )}
             </div>
-            {(dateFilter === 'week' || dateFilter === '7days') && (
+            {/* Week view: each week section carries its own dates */}
+            {dateFilter === '7days' && (
                 <div style={{ marginBottom: 'var(--space-lg)' }}>
                     <div className="week-tag nums">
                         Reporting Week: {formatDateShort(startDate)} - {formatDateShort(endDate)}
@@ -753,7 +821,7 @@ const Dashboard = () => {
                 <div className="loading-spinner">Loading stats...</div>
             ) : (
                 <>
-                    {viewMode === 'dashboard' && renderOverview()}
+                    {viewMode === 'dashboard' && (dateFilter === 'week' ? renderWeekSections() : renderOverview(stats))}
                     {viewMode === 'attendance_sheet' && renderAttendanceSheet()}
                     {viewMode === 'attendance_summary' && renderAttendanceSummary()}
                     {viewMode === 'report_view' && renderReportView()}

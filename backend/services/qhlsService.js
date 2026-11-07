@@ -214,17 +214,15 @@ class QHLSService {
 
   /**
    * First and last day (YYYY-MM-DD) of a reporting week
-   * @param {number} meetingDay - district meeting day, 0 = Sunday
+   * @param {number} startDay - day reporting weeks start on, 0 = Sunday
    * @param {number} weekOffset - 0 for this week, -1 for last week
    */
-  getReportingWeek(meetingDay, weekOffset = 0) {
-    // Same rule as the frontend's services/week.js: weeks start on the meeting day,
-    // and on the meeting day itself the week that just finished is reported
+  getReportingWeek(startDay, weekOffset = 0) {
+    // Same rule as the frontend's services/week.js: the week containing today
     const base = new Date();
     base.setHours(0, 0, 0, 0);
-    const diff = base.getDay() === meetingDay ? 7 : (base.getDay() - meetingDay + 7) % 7;
     const start = new Date(base);
-    start.setDate(base.getDate() - diff + weekOffset * 7);
+    start.setDate(base.getDate() - ((base.getDay() - startDay + 7) % 7) + weekOffset * 7);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
 
@@ -237,11 +235,11 @@ class QHLSService {
    * QHLS status. When a zone met more than once, each unit takes the most recent
    * status any of that week's meetings recorded for it.
    * @param {number} weekOffset - 0 for this week, -1 for last week
-   * @param {number} meetingDay - district meeting day, 0 = Sunday
+   * @param {number} startDay - day reporting weeks start on, 0 = Sunday
    * @param {Array<{id, name}>} zones - zones the user may see
    */
-  async getWeekStatus(weekOffset, meetingDay, zones) {
-    const { weekStart, weekEnd } = this.getReportingWeek(meetingDay, weekOffset);
+  async getWeekStatus(weekOffset, startDay, zones) {
+    const { weekStart, weekEnd } = this.getReportingWeek(startDay, weekOffset);
     const zoneNames = zones.map(z => z.name);
 
     const [meetings, units] = await Promise.all([

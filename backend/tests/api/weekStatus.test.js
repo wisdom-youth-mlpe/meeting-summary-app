@@ -4,7 +4,7 @@ const Meeting = require('../../models/Meeting');
 const Settings = require('../../models/Settings');
 const { users, auth, seedZones } = require('../helpers');
 
-// Friday 30 Oct 2026; with Wednesday meetings the week is 28 Oct - 3 Nov
+// Friday 30 Oct 2026; with Sunday weeks this week is 25 - 31 Oct
 beforeEach(async () => {
   jest.useFakeTimers({ now: new Date('2026-10-30T10:00:00Z'), doNotFake: ['nextTick', 'setImmediate'] });
   await seedZones();
@@ -29,7 +29,7 @@ describe('GET /api/qhls/week-status', () => {
 
   test('groups every unit of every zone by status', async () => {
     const { body } = await weekStatus(users.admin);
-    expect(body.data).toMatchObject({ weekStart: '2026-10-28', weekEnd: '2026-11-03' });
+    expect(body.data).toMatchObject({ weekStart: '2026-10-25', weekEnd: '2026-10-31' });
 
     const [one, two] = body.data.zones;
     expect(one).toMatchObject({
@@ -47,12 +47,12 @@ describe('GET /api/qhls/week-status', () => {
 
   test('the newest meeting of the week wins for each unit', async () => {
     await Meeting.create({
-      meetingId: 'M2', zoneId: 'Z1', zoneName: 'Zone One', date: '2026-10-31',
+      meetingId: 'M2', zoneId: 'Z1', zoneName: 'Zone One', date: '2026-10-30',
       qhls: [{ unit: 'Unit B', status: 'nadannu' }],
     });
     const { body } = await weekStatus(users.admin);
     expect(body.data.zones[0]).toMatchObject({
-      meetingDate: '2026-10-31', held: ['Unit A', 'Unit B'], noQhls: [],
+      meetingDate: '2026-10-30', held: ['Unit A', 'Unit B'], noQhls: [],
     });
   });
 
@@ -65,13 +65,19 @@ describe('GET /api/qhls/week-status', () => {
     expect(body.data.zones[1]).toMatchObject({ held: ['Unit C'], noQhls: ['Unit D'] });
   });
 
-  test('previous week and the meeting-day setting move the window', async () => {
+  test('previous week and the reporting-week setting move the window', async () => {
     const last = await weekStatus(users.admin, -1);
-    expect(last.body.data).toMatchObject({ weekStart: '2026-10-21', weekEnd: '2026-10-27' });
+    expect(last.body.data).toMatchObject({ weekStart: '2026-10-18', weekEnd: '2026-10-24' });
     expect(last.body.data.totals.notReported).toBe(4);
 
-    await Settings.create({ key: 'district_meeting_day', value: 1 });
+    await Settings.create({ key: 'reporting_week_start', value: 1 });
     const monday = await weekStatus(users.admin);
     expect(monday.body.data).toMatchObject({ weekStart: '2026-10-26', weekEnd: '2026-11-01' });
+  });
+
+  test('the meeting day setting does not move the week', async () => {
+    await Settings.create({ key: 'district_meeting_day', value: 3 });
+    const { body } = await weekStatus(users.admin);
+    expect(body.data).toMatchObject({ weekStart: '2026-10-25', weekEnd: '2026-10-31' });
   });
 });
