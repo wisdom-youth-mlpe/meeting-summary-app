@@ -8,11 +8,13 @@ import AttendeeList from './AttendeeList';
 import MeetingMinutes from './MeetingMinutes';
 import AgendaSelector from './AgendaSelector';
 import QHLSTable from './QHLSTable';
+import { toDateKey } from '../services/week';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const FORM_STORAGE_KEY = 'meetingFormDraft';
-const getTodayDate = () => new Date().toISOString().split('T')[0];
+// Local date: toISOString is UTC, which gave yesterday before 05:30 IST
+const getTodayDate = () => toDateKey(new Date());
 
 // Older meetings have no status; derive it from the checkbox and detail fields they stored
 export const deriveQhlsStatus = (row) => {
