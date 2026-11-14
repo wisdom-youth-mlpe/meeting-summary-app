@@ -471,9 +471,30 @@ router.put('/meetings/:meetingId', express.json(), canEditMeeting, async (req, r
         message: 'Minutes and attendance must be arrays',
       });
     }
-    
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid date',
+        message: 'Date must be YYYY-MM-DD',
+      });
+    }
+
+    // Moving a meeting to another zone needs access to that zone too
+    const allZones = await mongoService.getZones();
+    const zone = allZones.find(z => z.name === zoneName);
+    const zoneId = zone ? zone.id : undefined;
+    if (zoneId && !hasZoneAccess(req.user, zoneId)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied',
+        message: 'You do not have permission to move meetings to this zone'
+      });
+    }
+
     const result = await mongoService.updateMeeting(meetingId, {
       zoneName,
+      zoneId,
       date,
       startTime,
       endTime,
@@ -485,6 +506,13 @@ router.put('/meetings/:meetingId', express.json(), canEditMeeting, async (req, r
       adhyakshan: adhyakshan || '',
       nandhi: nandhi || '',
     });
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        error: 'Meeting not found',
+      });
+    }
 
     res.json({
       success: true,

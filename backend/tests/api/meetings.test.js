@@ -137,6 +137,39 @@ describe('PUT /api/meetings/:id', () => {
     const res = await request(app).put('/api/meetings/NOPE').set(auth(users.zoneAdmin)).send(meetingBody());
     expect(res.status).toBe(404);
   });
+
+  test('404 for an unknown meeting (admin)', async () => {
+    const res = await request(app).put('/api/meetings/NOPE').set(auth(users.admin)).send(meetingBody());
+    expect(res.status).toBe(404);
+  });
+
+  test('corrects a wrong date', async () => {
+    const res = await request(app).put('/api/meetings/M-Z1').set(auth(users.zoneAdmin))
+      .send(meetingBody({ date: '2026-11-03' }));
+    expect(res.status).toBe(200);
+    expect((await Meeting.findOne({ meetingId: 'M-Z1' })).date).toBe('2026-11-03');
+  });
+
+  test.each(['03-11-2026', '2026-13-45', ''])('rejects bad date %p', async (date) => {
+    const res = await request(app).put('/api/meetings/M-Z1').set(auth(users.admin)).send(meetingBody({ date }));
+    expect(res.status).toBe(400);
+    expect((await Meeting.findOne({ meetingId: 'M-Z1' })).date).toBe('2026-10-28');
+  });
+
+  test('admin moving a meeting to another zone updates its zoneId', async () => {
+    const res = await request(app).put('/api/meetings/M-Z1').set(auth(users.admin))
+      .send(meetingBody({ zoneName: 'Zone Two' }));
+    expect(res.status).toBe(200);
+    const saved = await Meeting.findOne({ meetingId: 'M-Z1' });
+    expect([saved.zoneName, saved.zoneId]).toEqual(['Zone Two', 'Z2']);
+  });
+
+  test('zone admin cannot move a meeting to a zone they do not manage', async () => {
+    const res = await request(app).put('/api/meetings/M-Z1').set(auth(users.zoneAdmin))
+      .send(meetingBody({ zoneName: 'Zone Two' }));
+    expect(res.status).toBe(403);
+    expect((await Meeting.findOne({ meetingId: 'M-Z1' })).zoneName).toBe('Zone One');
+  });
 });
 
 describe('DELETE /api/meetings/:id', () => {

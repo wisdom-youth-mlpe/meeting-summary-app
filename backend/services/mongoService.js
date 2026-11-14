@@ -372,6 +372,7 @@ class MongoService {
 
     // Update fields
     if (data.zoneName) meeting.zoneName = data.zoneName;
+    if (data.zoneId) meeting.zoneId = data.zoneId;
     if (data.date) meeting.date = data.date;
     if (data.startTime !== undefined) meeting.startTime = data.startTime;
     if (data.endTime !== undefined) meeting.endTime = data.endTime;
