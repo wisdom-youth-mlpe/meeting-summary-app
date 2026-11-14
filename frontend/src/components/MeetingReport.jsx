@@ -595,9 +595,20 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
             >
               ← Back to List
             </button>
-            <button type="button" onClick={handleCopyReport}>
-              Copy Report
-            </button>
+            <div className="report-toolbar-actions">
+              {canEdit(selectedMeetingData) && (
+                <button
+                  type="button"
+                  className="btn-quiet"
+                  onClick={() => handleEdit(selectedMeetingData.meetingId)}
+                >
+                  Edit
+                </button>
+              )}
+              <button type="button" onClick={handleCopyReport}>
+                Copy Report
+              </button>
+            </div>
           </div>
 
           <div className="report-container">

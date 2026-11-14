@@ -1362,6 +1362,11 @@ details.report-group > summary h2 {
   margin-bottom: var(--space-md);
 }
 
+.report-toolbar-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
 .collapsible summary {
   display: flex;
   justify-content: space-between;
