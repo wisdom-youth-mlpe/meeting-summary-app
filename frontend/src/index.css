@@ -480,6 +480,25 @@ button:disabled {
   box-shadow: var(--shadow-lg);
 }
 
+/* Editing a saved meeting: Cancel and Reset sit beside Update */
+.submit-section.editing {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.edit-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.edit-actions button {
+  min-height: 48px;
+  background: var(--surface);
+  color: var(--slate);
+  border: 1px solid var(--edge);
+  box-shadow: var(--shadow-lg);
+}
+
 /* ======================================
    Loading, Error & Success States
    ====================================== */

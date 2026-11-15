@@ -13,6 +13,25 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const FORM_STORAGE_KEY = 'meetingFormDraft';
+// Unsaved edits of a saved meeting; kept apart so they never mix with a new meeting's draft
+const EDIT_DRAFT_KEY = 'meetingFormEditDraft';
+
+const readEditDraft = (meetingId) => {
+  try {
+    const draft = JSON.parse(localStorage.getItem(EDIT_DRAFT_KEY));
+    return draft?.meetingId === meetingId ? draft : null;
+  } catch {
+    return null;
+  }
+};
+
+const clearEditDraft = () => {
+  try {
+    localStorage.removeItem(EDIT_DRAFT_KEY);
+  } catch (err) {
+    console.warn('Could not remove meeting edit draft from storage', err);
+  }
+};
 // Local date: toISOString is UTC, which gave yesterday before 05:30 IST
 const getTodayDate = () => toDateKey(new Date());
 
@@ -64,6 +83,8 @@ export const buildQhlsRows = (units = [], existingData = []) => {
 const MeetingForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  // Editing a saved meeting is /form?edit=<meetingId>, so a reload stays in edit mode
+  const editId = new URLSearchParams(location.search).get('edit');
   const user = getUser();
   const accessConfig = getUserAccessConfig(user);
 
@@ -99,8 +120,10 @@ const MeetingForm = () => {
   const [reportData, setReportData] = useState(null);
   const [showReportPreview, setShowReportPreview] = useState(false);
   const [draftHydrated, setDraftHydrated] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingMeetingId, setEditingMeetingId] = useState(null);
+  const [isEditing, setIsEditing] = useState(Boolean(editId));
+  const [editingMeetingId, setEditingMeetingId] = useState(editId);
+  const [editLoad, setEditLoad] = useState(0);
+  const [editDataReady, setEditDataReady] = useState(0);
   const [carriedIllaUnits, setCarriedIllaUnits] = useState([]);
   const [qhlsHighlightMissing, setQhlsHighlightMissing] = useState(false);
   const [lastMeetingRefresh, setLastMeetingRefresh] = useState(0);
@@ -110,6 +133,7 @@ const MeetingForm = () => {
   const selectedAgendasHydratedRef = useRef(false);
   const draftDataRef = useRef(null);
   const editDataRef = useRef(null);
+  const editAppliedRef = useRef(false);
   const prevZoneRef = useRef(null);
 
   const clearDraftStorage = () => {
@@ -160,7 +184,8 @@ const MeetingForm = () => {
           setZones(filteredZones);
 
           // Auto-select zone if user has access to only one zone
-          if (filteredZones.length === 1 && !selectedZone) {
+          // (not when editing: the saved meeting sets the zone and its attendance)
+          if (filteredZones.length === 1 && !selectedZone && !editId) {
             const autoSelectedZone = filteredZones[0];
             console.log('Auto-selecting zone:', autoSelectedZone);
             setSelectedZone(autoSelectedZone.id);
@@ -228,39 +253,54 @@ const MeetingForm = () => {
     fetchAgendas();
   }, []);
 
-  // Check if we have edit data passed via navigation state
+  // Load the saved meeting, with any unsaved edits on top; Reset reloads it without them
   useEffect(() => {
-    if (location.state?.editMeetingData) {
+    if (!editId) return;
+    let cancelled = false;
+    (async () => {
       try {
-        sessionStorage.setItem('editMeetingData', JSON.stringify(location.state.editMeetingData));
-        editDataRef.current = location.state.editMeetingData;
+        const response = await getMeetingReport(editId);
+        if (cancelled) return;
+        if (!response.success) {
+          setError('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക്');
+          return;
+        }
+        const data = { ...response.meetingData, meetingId: editId };
+        const draft = readEditDraft(editId);
+        if (draft) {
+          Object.assign(data, {
+            zoneId: draft.selectedZone || data.zoneId,
+            zoneName: draft.selectedZone ? undefined : data.zoneName,
+            date: draft.date,
+            startTime: draft.startTime,
+            endTime: draft.endTime,
+            swagatham: draft.swagatham,
+            adhyakshan: draft.adhyakshan,
+            nandhi: draft.nandhi,
+            agendas: draft.selectedAgendas,
+            minutes: draft.minutes,
+            attendanceMap: draft.attendance,
+            qhls: draft.qhlsData,
+          });
+        }
+        editDataRef.current = data;
+        setEditDataReady((n) => n + 1);
       } catch (err) {
-        console.error('Failed to process edit meeting data from navigation state:', err);
-      } finally {
-        // Clear state so it doesn't reapply
-        navigate(location.pathname, { replace: true, state: {} });
+        if (!cancelled) setError('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക്: ' + err.message);
       }
-    }
-  }, [location, navigate]);
-
-  // Check if we have edit data coming from MeetingReport (fallback via sessionStorage)
-  useEffect(() => {
-    const editDataString = sessionStorage.getItem('editMeetingData');
-    if (editDataString) {
-      try {
-        const parsed = JSON.parse(editDataString);
-        editDataRef.current = parsed;
-      } catch (err) {
-        console.error('Failed to parse edit meeting data:', err);
-      } finally {
-        sessionStorage.removeItem('editMeetingData');
-      }
-    }
-  }, []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [editId, editLoad]);
 
   // Hydrate draft from localStorage on mount
   useEffect(() => {
     if (draftHydrated) return;
+    if (editId) {
+      setDraftHydrated(true);
+      return;
+    }
     try {
       const storedDraft = localStorage.getItem(FORM_STORAGE_KEY);
       if (!storedDraft) {
@@ -405,7 +445,6 @@ const MeetingForm = () => {
     const editData = editDataRef.current;
     editDataRef.current = null;
 
-    clearDraftStorage();
     setIsEditing(true);
     setEditingMeetingId(editData.meetingId || null);
 
@@ -445,8 +484,9 @@ const MeetingForm = () => {
       setMinutes(['']);
     }
 
-    if (Array.isArray(editData.attendance) && editData.attendance.length) {
-      const attendanceMap = {};
+    let attendanceMap = editData.attendanceMap;
+    if (!attendanceMap && Array.isArray(editData.attendance) && editData.attendance.length) {
+      attendanceMap = {};
       editData.attendance.forEach((item) => {
         const key = `${item.name}_${item.role || ''}`;
         attendanceMap[key] = {
@@ -454,9 +494,20 @@ const MeetingForm = () => {
           reason: item.reason || '',
         };
       });
+    }
+    if (attendanceMap) {
       attendanceDraftRef.current = attendanceMap;
       if (!matchedZone) {
         setAttendance(attendanceMap);
+      } else if (matchedZone.id === selectedZone) {
+        // Same zone (Reset): attendees are already loaded and won't be fetched again
+        setAttendance((prev) => {
+          const merged = {};
+          Object.keys(prev).forEach((key) => {
+            merged[key] = { status: 'present', reason: '' };
+          });
+          return { ...merged, ...attendanceMap };
+        });
       }
     }
 
@@ -474,7 +525,8 @@ const MeetingForm = () => {
     }
 
     setSuccess(`മീറ്റിംഗ് എഡിറ്റ് ചെയ്യുന്നു: ${editData.meetingId || ''}`);
-  }, [zones]);
+    editAppliedRef.current = true;
+  }, [zones, editDataReady]);
 
   useEffect(() => {
     // Rebuild qhlsData whenever selectedZone or zoneUnits change
@@ -650,6 +702,30 @@ const MeetingForm = () => {
   useEffect(() => {
     if (!draftHydrated) return;
 
+    if (editId) {
+      // Wait until the saved meeting is on the form, or its loading state would overwrite the edit draft
+      if (!editAppliedRef.current || editDataRef.current) return;
+      try {
+        localStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({
+          meetingId: editId,
+          selectedZone,
+          date,
+          startTime,
+          endTime,
+          swagatham,
+          adhyakshan,
+          nandhi,
+          selectedAgendas,
+          minutes,
+          attendance,
+          qhlsData,
+        }));
+      } catch (err) {
+        console.warn('Unable to save meeting edit draft', err);
+      }
+      return;
+    }
+
     const hasMeaningfulData =
       selectedZone ||
       startTime ||
@@ -685,10 +761,14 @@ const MeetingForm = () => {
     }
   }, [
     draftHydrated,
+    editId,
     selectedZone,
     date,
     startTime,
     endTime,
+    swagatham,
+    adhyakshan,
+    nandhi,
     selectedAgendas,
     minutes,
     attendance,
@@ -1201,6 +1281,13 @@ const MeetingForm = () => {
         ? await updateMeeting(editingMeetingId, meetingData)
         : await saveMeeting(meetingData);
 
+      if (response.success && isEditMode) {
+        // Saved: drop the unsaved-edit copy and show the updated report
+        clearEditDraft();
+        navigate('/report', { state: { viewMeetingId: editingMeetingId } });
+        return;
+      }
+
       if (response.success) {
         const meetingId = isEditMode
           ? editingMeetingId
@@ -1250,6 +1337,18 @@ const MeetingForm = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    clearEditDraft();
+    navigate('/report', { state: { viewMeetingId: editId } });
+  };
+
+  const handleResetEdit = () => {
+    if (!window.confirm('സേവ് ചെയ്യാത്ത മാറ്റങ്ങൾ ഒഴിവാക്കണോ? (Discard unsaved changes?)')) return;
+    clearEditDraft();
+    editAppliedRef.current = false;
+    setEditLoad((n) => n + 1);
   };
 
   return (
@@ -1389,7 +1488,17 @@ const MeetingForm = () => {
           </div>
         </div>
 
-        <div className="submit-section">
+        <div className={`submit-section${editId ? ' editing' : ''}`}>
+          {editId && (
+            <div className="edit-actions">
+              <button type="button" onClick={handleCancelEdit}>
+                Cancel
+              </button>
+              <button type="button" onClick={handleResetEdit}>
+                Reset
+              </button>
+            </div>
+          )}
           <button
             type="submit"
             className="submit-button"
@@ -1488,5 +1597,11 @@ const MeetingForm = () => {
   );
 };
 
-export default MeetingForm;
+// A new key remounts the form when switching between editing and a new meeting on /form
+const MeetingFormRoute = () => {
+  const location = useLocation();
+  return <MeetingForm key={location.search} />;
+};
+
+export default MeetingFormRoute;
 
