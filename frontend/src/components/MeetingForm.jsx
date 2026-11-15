@@ -1345,7 +1345,7 @@ const MeetingForm = () => {
   };
 
   const handleResetEdit = () => {
-    if (!window.confirm('സേവ് ചെയ്യാത്ത മാറ്റങ്ങൾ ഒഴിവാക്കണോ? (Discard unsaved changes?)')) return;
+    if (!window.confirm('സേവ് ചെയ്യാത്ത മാറ്റങ്ങൾ ഒഴിവാക്കണോ?')) return;
     clearEditDraft();
     editAppliedRef.current = false;
     setEditLoad((n) => n + 1);
