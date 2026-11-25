@@ -129,31 +129,8 @@ const MeetingReport = () => {
     }
   };
 
-  const handleEdit = async (meetingId) => {
-    try {
-      const response = await getMeetingReport(meetingId);
-      if (response.success) {
-        // Navigate to form with meeting data
-        // Store meeting data in sessionStorage or pass via state
-        sessionStorage.setItem('editMeetingData', JSON.stringify({
-          meetingId,
-          ...response.meetingData,
-        }));
-        navigate('/form', {
-          state: {
-            editMeetingData: {
-              meetingId,
-              ...response.meetingData,
-            },
-          },
-        });
-        // The form component will need to check for editMeetingData on mount
-      } else {
-        alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക്');
-      }
-    } catch (err) {
-      alert('മീറ്റിംഗ് ഡാറ്റ ലഭിക്കുന്നതിൽ പിശക്: ' + err.message);
-    }
+  const handleEdit = (meetingId) => {
+    navigate(`/form?edit=${encodeURIComponent(meetingId)}`);
   };
 
   const handleDelete = async (meetingId) => {
@@ -595,9 +572,20 @@ ${adhyakshanLine ? adhyakshanLine + '\n' : ''}
             >
               ← Back to List
             </button>
-            <button type="button" onClick={handleCopyReport}>
-              Copy Report
-            </button>
+            <div className="report-toolbar-actions">
+              {canEdit(selectedMeetingData) && (
+                <button
+                  type="button"
+                  className="btn-quiet"
+                  onClick={() => handleEdit(selectedMeetingData.meetingId)}
+                >
+                  Edit
+                </button>
+              )}
+              <button type="button" onClick={handleCopyReport}>
+                Copy Report
+              </button>
+            </div>
           </div>
 
           <div className="report-container">

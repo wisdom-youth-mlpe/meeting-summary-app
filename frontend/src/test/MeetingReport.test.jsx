@@ -1,8 +1,8 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import MeetingReport from '../components/MeetingReport';
-import { getAllMeetings } from '../services/api';
+import { getAllMeetings, getMeetingReport } from '../services/api';
 import { loadWeekStart } from '../services/week';
 
 vi.mock('../services/api', () => ({
@@ -64,5 +64,35 @@ describe('MeetingReport', () => {
     render(<MemoryRouter><MeetingReport /></MemoryRouter>);
     await screen.findByText('Zone This');
     expect(screen.queryByRole('button', { name: /Edit|Delete/i })).not.toBeInTheDocument();
+  });
+
+  const openReport = async (zoneName) => {
+    getMeetingReport.mockResolvedValue({
+      success: true,
+      meetingData: meeting('M1', zoneName, '2026-11-02'),
+      report: {},
+    });
+    render(<MemoryRouter><MeetingReport /></MemoryRouter>);
+    await screen.findByText('Zone This');
+    fireEvent.click(within(section('ഈ ആഴ്ചയിലെ റിപ്പോർട്ടുകൾ')).getByRole('button', { name: 'റിപ്പോർട്ട്' }));
+    await screen.findByText('Copy Report');
+  };
+
+  test('opened report offers Edit to an admin', async () => {
+    await openReport('Zone This');
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Delete/i })).not.toBeInTheDocument();
+  });
+
+  test('opened report offers Edit to a zone admin of its zone only', async () => {
+    localStorage.setItem('meeting_app_user', JSON.stringify({ username: 'z', roles: ['zone_admin'], zoneAccess: ['Zone Mine'] }));
+    await openReport('Zone Mine');
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+  });
+
+  test('opened report hides Edit from a zone admin of another zone', async () => {
+    localStorage.setItem('meeting_app_user', JSON.stringify({ username: 'z', roles: ['zone_admin'], zoneAccess: ['Zone Mine'] }));
+    await openReport('Zone This');
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 });
